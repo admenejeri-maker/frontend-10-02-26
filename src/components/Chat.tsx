@@ -30,6 +30,7 @@ interface Conversation {
     messages: Message[];
     created_at?: string;
     updated_at?: string;
+    backendSessionId?: string;  // Session ID from backend for persistence
 }
 
 // Generate unique ID
@@ -413,13 +414,29 @@ export default function Chat() {
             );
 
             try {
+                // Get backendSessionId from active conversation if available
+                const activeConv = conversations.find(c => c.id === convId);
+                const sessionIdToUse = activeConv?.backendSessionId || convId;
+
+                // DEBUG: Log session persistence for amnesia debugging
+                console.log('[DEBUG SESSION]', {
+                    action: 'sendMessageStream',
+                    convId,
+                    backendSessionId: activeConv?.backendSessionId,
+                    sessionIdToUse,
+                    activeId,
+                    userId,
+                    isNewConversation: convId !== activeId,
+                    messagePreview: text.slice(0, 50),
+                });
+
                 const response = await fetch(`${BACKEND_URL}/chat/stream`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_id: userId,
                         message: text,
-                        session_id: convId,
+                        session_id: sessionIdToUse,  // Use backend session_id if available
                     }),
                 });
 
@@ -521,12 +538,21 @@ export default function Chat() {
                                     payload: qr.payload,
                                 }));
                             } else if (data.type === 'done') {
-                                // Streaming complete
+                                // Streaming complete - persist backend session_id
+                                if (data.session_id) {
+                                    setConversations((prev) =>
+                                        prev.map((conv) =>
+                                            conv.id === convId
+                                                ? { ...conv, backendSessionId: data.session_id }
+                                                : conv
+                                        )
+                                    );
+                                }
                                 break;
                             } else if (data.type === 'error') {
-                                console.error('[Scoop] Stream error:', data.content);
-                                // Show error in chat - no TIP needed for error messages
-                                assistantContent = 'დაფიქსირდა შეცდომა. გთხოვთ სცადოთ თავიდან.';
+                                console.error('[Scoop] Stream error:', data.message || data.content);
+                                // Show error in chat - use backend message if available
+                                assistantContent = data.message || 'დაფიქსირდა შეცდომა. გთხოვთ სცადოთ თავიდან.';
                                 setConversations((prev) =>
                                     prev.map((conv) =>
                                         conv.id === convId
