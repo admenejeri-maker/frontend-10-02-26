@@ -533,7 +533,9 @@ export default function Chat() {
                                 // Real-time AI thoughts from Gemini Thinking Stream
                                 setThinkingSteps(prev => [...prev, data.content]);
                             } else if (data.type === 'quick_replies') {
-                                quickReplies = data.content.map((qr: { title: string; payload: string }) => ({
+                                // Backend sends {type: "quick_replies", replies: [...]}
+                                const repliesData = data.replies || data.content || [];
+                                quickReplies = repliesData.map((qr: { title: string; payload: string }) => ({
                                     title: qr.title,
                                     payload: qr.payload,
                                 }));
