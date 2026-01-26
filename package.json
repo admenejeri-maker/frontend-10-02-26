@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "clean": "rm -rf .next node_modules/.cache",
+    "restart": "npm run clean && npm run dev"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.29",

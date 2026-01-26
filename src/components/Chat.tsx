@@ -454,22 +454,40 @@ export default function Chat() {
                 }
 
                 // Read stream
+                // Bug #22 Fix: SSE events can span multiple network chunks
+                // Split on event boundary (\n\n) not line boundary (\n)
                 let buffer = '';
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
 
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    // Keep incomplete line in buffer
-                    buffer = lines.pop() || '';
+                    // Decode chunk if present
+                    if (value) {
+                        buffer += decoder.decode(value, { stream: true });
+                    }
 
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
+                    // BUG FIX #23: On stream end, flush TextDecoder's internal buffer
+                    // Georgian UTF-8 chars are 3 bytes - chunk boundaries may split mid-character
+                    // Without this flush, buffered bytes are lost when stream ends
+                    // See: https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder/decode#stream
+                    if (done) {
+                        buffer += decoder.decode(); // Final flush - no arguments
+                    }
+
+                    // SSE events are separated by double newline
+                    const events = buffer.split('\n\n');
+                    // Keep incomplete event in buffer
+                    buffer = events.pop() || '';
+
+                    for (const event of events) {
+                        // Find the data line within the event
+                        const dataLine = event.split('\n').find(line => line.startsWith('data: '));
+                        if (!dataLine) continue;
+                        const line = dataLine; // Preserve variable name for compatibility
 
                         try {
                             const data = JSON.parse(line.slice(6));
-                            console.log('[DEBUG SSE]', data.type, data.content?.slice?.(0, 50) || data.content);
+                            // Enhanced debug: show FULL content length
+                            console.log('[DEBUG SSE]', data.type, 'len=' + (data.content?.length || 0), data.content?.slice?.(0, 80));
 
                             if (data.type === 'text') {
                                 // Bug #19 Fix: Strip [TIP]...[/TIP] from incoming text stream only
@@ -574,6 +592,9 @@ export default function Chat() {
                             // Ignore JSON parse errors for incomplete chunks
                         }
                     }
+
+                    // Exit loop after processing final buffer (BUG FIX #23)
+                    if (done) break;
                 }
 
                 // Final update with quick replies
