@@ -705,7 +705,7 @@ export default function Chat() {
                             <ChatResponse
                                 userMessage={msg.content}
                                 assistantContent={nextMsg.content}
-                                quickReplies={dynamicQuickReplies}
+                                quickReplies={isLastPair ? dynamicQuickReplies : []}
                                 onQuickReplyClick={(id, text) => sendMessageStream(text)}
                             />
                         </div>
