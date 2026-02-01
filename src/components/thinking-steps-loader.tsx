@@ -26,7 +26,8 @@ const steps: Step[] = [
 ];
 
 // Extract only the **bold** text from thinking steps
-const extractBoldText = (text: string): string => {
+const extractBoldText = (text: string | undefined | null): string => {
+    if (!text) return '';
     const match = text.match(/\*\*(.+?)\*\*/);
     if (match) return match[1];
     // Fallback: if no bold, take first 60 chars
@@ -38,7 +39,9 @@ export function ThinkingStepsLoader({ userMessage, realThoughts, onComplete }: T
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
     // Use real thoughts if available, otherwise use fake steps
-    const hasRealThoughts = realThoughts && realThoughts.length > 0;
+    // Filter out undefined/null/empty values
+    const filteredThoughts = realThoughts?.filter(t => t && t.trim().length > 0) || [];
+    const hasRealThoughts = filteredThoughts.length > 0;
 
     useEffect(() => {
         if (currentStep >= steps.length) {
@@ -91,7 +94,7 @@ export function ThinkingStepsLoader({ userMessage, realThoughts, onComplete }: T
                     <div className="space-y-2">
                         {/* Render REAL thoughts if available */}
                         {hasRealThoughts ? (
-                            realThoughts.map((thought, index) => (
+                            filteredThoughts.map((thought, index) => (
                                 <div
                                     key={index}
                                     className="flex items-center gap-3 min-h-7"

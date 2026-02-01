@@ -8,33 +8,17 @@ import { ThinkingStepsLoader } from './thinking-steps-loader';
 import { ChatResponse } from './chat-response';
 import { ScoopLogo } from './scoop-logo';
 import { Sidebar } from './sidebar';
+import {
+    useSSEStream,
+    useChatSession,
+    type QuickReply as SSEQuickReply,
+    type Message,
+    type Conversation,
+    type QuickReply,
+} from '../hooks';
 
 // Backend API URL - Production Cloud Run
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
-
-interface QuickReply {
-    title: string;
-    payload: string;
-}
-
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    quickReplies?: QuickReply[];
-}
-
-interface Conversation {
-    id: string;
-    title: string;
-    messages: Message[];
-    created_at?: string;
-    updated_at?: string;
-    backendSessionId?: string;  // Session ID from backend for persistence
-}
-
-// Generate unique ID
-const generateId = () => Math.random().toString(36).substring(2, 15);
 
 // Gemini-style Welcome Section (centered layout)
 function WelcomeSection() {
@@ -101,151 +85,38 @@ function MessageBubble({ message }: { message: Message }) {
 
 // Main Chat Component
 export default function Chat() {
-    const [conversations, setConversations] = useState<Conversation[]>([]);
-    const [activeId, setActiveId] = useState<string | null>(null);
+    // Session management hook (handles conversations, userId, consent, etc.)
+    const {
+        conversations,
+        setConversations,
+        activeId,
+        setActiveId,
+        activeConversation,
+        userId,
+        isLoadingHistory,
+        showConsentModal,
+        handleAcceptConsent,
+        handleRejectConsent,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        isDeleting,
+        handleDeleteData,
+        startNewChat: hookStartNewChat,
+        createNewConversation,
+        loadSessionHistory,
+        generateMessageId,
+    } = useChatSession();
+
+    // UI-specific state (not part of session management)
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [userId, setUserId] = useState<string>('');
-    const [sessionsLoaded, setSessionsLoaded] = useState(false);
-    const [showConsentModal, setShowConsentModal] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-    const [thinkingSteps, setThinkingSteps] = useState<string[]>([]); // Real-time AI thoughts
+    const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const activeConversation = conversations.find((c) => c.id === activeId);
-
-    // Last user message ref for smart scrolling
     const lastUserMessageRef = useRef<HTMLDivElement>(null);
 
-    // Initialize persistent userId on mount (client-side only to avoid hydration mismatch)
-    useEffect(() => {
-        // Check consent first
-        const hasConsent = localStorage.getItem('scoop_history_consent');
-        if (!hasConsent) {
-            setShowConsentModal(true);
-        }
-
-        const stored = localStorage.getItem('scoop_user_id');
-        if (stored) {
-            setUserId(stored);
-        } else {
-            const newId = `widget_${Math.random().toString(36).substring(2, 15)}`;
-            localStorage.setItem('scoop_user_id', newId);
-            setUserId(newId);
-        }
-    }, []);
-
-    // Handle consent acceptance
-    const handleAcceptConsent = useCallback(() => {
-        localStorage.setItem('scoop_history_consent', 'true');
-        setShowConsentModal(false);
-    }, []);
-
-    // Handle consent rejection (don't save history)
-    const handleRejectConsent = useCallback(() => {
-        localStorage.setItem('scoop_history_consent', 'false');
-        setShowConsentModal(false);
-    }, []);
-
-    // Handle delete all user data
-    const handleDeleteData = useCallback(async () => {
-        if (!userId) return;
-
-        setIsDeleting(true);
-        try {
-            const res = await fetch(`${BACKEND_URL}/user/${userId}/data`, {
-                method: 'DELETE',
-            });
-
-            if (res.ok) {
-                // Clear localStorage
-                localStorage.removeItem('scoop_user_id');
-                localStorage.removeItem('scoop_history_consent');
-
-                // Generate new userId for next session
-                const newId = `widget_${Math.random().toString(36).substring(2, 15)}`;
-                localStorage.setItem('scoop_user_id', newId);
-
-                // Force full page reload to clear:
-                // 1. Frontend React state
-                // 2. Backend Gemini session cache (function call history)
-                // 3. Any in-memory user profile data
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error('[Scoop] Failed to delete data:', error);
-        } finally {
-            setIsDeleting(false);
-        }
-    }, [userId]);
-
-    // Load sessions from backend on mount
-    useEffect(() => {
-        if (!userId || sessionsLoaded) return;
-
-        const loadSessions = async () => {
-            try {
-                const res = await fetch(`${BACKEND_URL}/sessions/${userId}`);
-                if (!res.ok) return;
-                const data = await res.json();
-
-                if (data.sessions && data.sessions.length > 0) {
-                    // Convert backend sessions to frontend Conversation format
-                    const loadedConvs: Conversation[] = data.sessions.map((s: {
-                        session_id: string;
-                        title: string;
-                        created_at?: string;
-                        updated_at?: string;
-                    }) => ({
-                        id: s.session_id,
-                        title: s.title || 'ახალი საუბარი',
-                        messages: [], // Will be loaded when selected
-                        created_at: s.created_at,
-                        updated_at: s.updated_at,
-                    }));
-                    setConversations(loadedConvs);
-                }
-                setSessionsLoaded(true);
-            } catch (error) {
-                console.error('[Scoop] Failed to load sessions:', error);
-                setSessionsLoaded(true);
-            }
-        };
-
-        loadSessions();
-    }, [userId, sessionsLoaded]);
-
-    // Load session history when selecting from sidebar
-    const loadSessionHistory = useCallback(async (sessionId: string) => {
-        setIsLoadingHistory(true);
-        try {
-            const res = await fetch(`${BACKEND_URL}/session/${sessionId}/history`);
-            if (!res.ok) return;
-            const data = await res.json();
-
-            if (data.messages) {
-                const messages: Message[] = data.messages.map((m: { role: string; content: string }, idx: number) => ({
-                    id: `${sessionId}_${idx}`,
-                    role: m.role as 'user' | 'assistant',
-                    content: m.content,
-                }));
-
-                // Update the conversation with loaded messages
-                setConversations(prev => prev.map(conv =>
-                    conv.id === sessionId
-                        ? { ...conv, messages }
-                        : conv
-                ));
-            }
-        } catch (error) {
-            console.error('[Scoop] Failed to load session history:', error);
-        } finally {
-            setIsLoadingHistory(false);
-        }
-    }, []);
+    // SSE Stream hook for message streaming
+    const { streamMessage, abortStream } = useSSEStream();
 
     // Auto-scroll: scroll მხოლოდ ერთხელ loading დაწყებისას
     useEffect(() => {
@@ -259,113 +130,15 @@ export default function Chat() {
         }
     }, [isLoading]); // მხოლოდ isLoading, არა messages!
 
-    // Create new conversation - just reset to empty screen
+    // Wrapper for startNewChat to also clear local UI state
     const startNewChat = useCallback(() => {
-        setActiveId(null);
+        hookStartNewChat();
         setInput('');
         setSidebarOpen(false);
-    }, []);
+    }, [hookStartNewChat]);
 
-    // Actually create conversation when first message is sent
-    const createNewConversation = useCallback(() => {
-        const newId = generateId();
-        const newConv: Conversation = {
-            id: newId,
-            title: 'ახალი საუბარი',
-            messages: [],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
-        setConversations((prev) => [newConv, ...prev]);
-        setActiveId(newId);
-        return newId;
-    }, []);
-
-    // Send message using /chat endpoint (fallback for non-streaming)
+    // Send message using SSE streaming endpoint
     const sendMessage = useCallback(
-        async (text: string) => {
-            if (!text.trim() || isLoading) return;
-
-            let convId = activeId;
-            if (!convId) {
-                convId = createNewConversation();
-            }
-
-            setInput('');
-            setIsLoading(true);
-            // Reset textarea height
-            const textarea = document.querySelector('textarea');
-            if (textarea) textarea.style.height = '44px';
-
-            const userMessage: Message = {
-                id: generateId(),
-                role: 'user',
-                content: text.trim(),
-            };
-
-            // Add user message immediately
-            setConversations((prev) =>
-                prev.map((conv) =>
-                    conv.id === convId
-                        ? {
-                            ...conv,
-                            title: conv.messages.length === 0 ? text.slice(0, 25) + '...' : conv.title,
-                            messages: [...conv.messages, userMessage],
-                        }
-                        : conv
-                )
-            );
-
-            try {
-                // Simulate network delay for demo visuals if needed, or just fetch
-                const response = await fetch(`${BACKEND_URL}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        message: text,
-                        session_id: convId,
-                    }),
-                });
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                const data = await response.json();
-                const responseText = data.response_text_geo || data.response || data.text || '';
-
-                // Extract dynamic quick_replies from backend
-                const backendQuickReplies: QuickReply[] = data.quick_replies || [];
-
-                // Add assistant message with quick replies
-                const assistantMessage: Message = {
-                    id: generateId(),
-                    role: 'assistant',
-                    content: responseText,
-                    quickReplies: backendQuickReplies,
-                };
-
-                setConversations((prev) =>
-                    prev.map((conv) =>
-                        conv.id === convId
-                            ? {
-                                ...conv,
-                                messages: [...conv.messages, assistantMessage],
-                            }
-                            : conv
-                    )
-                );
-
-            } catch (error) {
-                console.error('[Scoop] Fetch error:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        },
-        [activeId, createNewConversation, isLoading, userId]
-    );
-
-    // Send message using SSE streaming endpoint for faster perceived response
-    const sendMessageStream = useCallback(
         async (text: string) => {
             if (!text.trim() || isLoading) return;
 
@@ -382,7 +155,7 @@ export default function Chat() {
             if (textarea) textarea.style.height = '44px';
 
             const userMessage: Message = {
-                id: generateId(),
+                id: generateMessageId(),
                 role: 'user',
                 content: text.trim(),
             };
@@ -401,7 +174,7 @@ export default function Chat() {
             );
 
             // Add empty assistant message that we'll update progressively
-            const assistantId = generateId();
+            const assistantId = generateMessageId();
             setConversations((prev) =>
                 prev.map((conv) =>
                     conv.id === convId
@@ -430,175 +203,113 @@ export default function Chat() {
                     messagePreview: text.slice(0, 50),
                 });
 
-                const response = await fetch(`${BACKEND_URL}/chat/stream`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                // Use the SSE stream hook for parsing
+                let assistantContent = '';
+                let accumulatedQuickReplies: QuickReply[] = [];
+
+                await streamMessage({
+                    url: `${BACKEND_URL}/chat/stream`,
+                    body: {
                         user_id: userId,
                         message: text,
-                        session_id: sessionIdToUse,  // Use backend session_id if available
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const reader = response.body?.getReader();
-                const decoder = new TextDecoder();
-                let assistantContent = '';
-                let quickReplies: QuickReply[] = [];
-
-                if (!reader) {
-                    throw new Error('No response body');
-                }
-
-                // Read stream
-                // Bug #22 Fix: SSE events can span multiple network chunks
-                // Split on event boundary (\n\n) not line boundary (\n)
-                let buffer = '';
-                while (true) {
-                    const { done, value } = await reader.read();
-
-                    // Decode chunk if present
-                    if (value) {
-                        buffer += decoder.decode(value, { stream: true });
-                    }
-
-                    // BUG FIX #23: On stream end, flush TextDecoder's internal buffer
-                    // Georgian UTF-8 chars are 3 bytes - chunk boundaries may split mid-character
-                    // Without this flush, buffered bytes are lost when stream ends
-                    // See: https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder/decode#stream
-                    if (done) {
-                        buffer += decoder.decode(); // Final flush - no arguments
-                    }
-
-                    // SSE events are separated by double newline
-                    const events = buffer.split('\n\n');
-                    // Keep incomplete event in buffer
-                    buffer = events.pop() || '';
-
-                    for (const event of events) {
-                        // Find the data line within the event
-                        const dataLine = event.split('\n').find(line => line.startsWith('data: '));
-                        if (!dataLine) continue;
-                        const line = dataLine; // Preserve variable name for compatibility
-
-                        try {
-                            const data = JSON.parse(line.slice(6));
-                            // Enhanced debug: show FULL content length
-                            console.log('[DEBUG SSE]', data.type, 'len=' + (data.content?.length || 0), data.content?.slice?.(0, 80));
-
-                            if (data.type === 'text') {
-                                // Bug #19 Fix: Strip [TIP]...[/TIP] from incoming text stream only
-                                // Tip is sent separately via 'tip' event - remove raw tags from incoming data
-                                const cleanContent = data.content.replace(/\[TIP\][\s\S]*?\[\/TIP\]/g, '');
-                                assistantContent += cleanContent;
-                                // Bug #21 Fix: Don't strip TIP from assistantContent - it may have
-                                // properly-formatted TIP from 'tip' event handler
+                        session_id: sessionIdToUse,
+                    },
+                    handlers: {
+                        onText: (content: string) => {
+                            assistantContent += content;
+                            setConversations((prev) =>
+                                prev.map((conv) =>
+                                    conv.id === convId
+                                        ? {
+                                            ...conv,
+                                            messages: conv.messages.map((m) =>
+                                                m.id === assistantId
+                                                    ? { ...m, content: assistantContent }
+                                                    : m
+                                            ),
+                                        }
+                                        : conv
+                                )
+                            );
+                        },
+                        onProducts: (content: string) => {
+                            assistantContent += '\n\n' + content;
+                            setConversations((prev) =>
+                                prev.map((conv) =>
+                                    conv.id === convId
+                                        ? {
+                                            ...conv,
+                                            messages: conv.messages.map((m) =>
+                                                m.id === assistantId
+                                                    ? { ...m, content: assistantContent }
+                                                    : m
+                                            ),
+                                        }
+                                        : conv
+                                )
+                            );
+                        },
+                        onTip: (tipText: string) => {
+                            const tipWithTags = `\n\n[TIP]\n${tipText}\n[/TIP]`;
+                            assistantContent += tipWithTags;
+                            setConversations((prev) =>
+                                prev.map((conv) =>
+                                    conv.id === convId
+                                        ? {
+                                            ...conv,
+                                            messages: conv.messages.map((m) =>
+                                                m.id === assistantId
+                                                    ? { ...m, content: assistantContent }
+                                                    : m
+                                            ),
+                                        }
+                                        : conv
+                                )
+                            );
+                        },
+                        onThinking: (content: string) => {
+                            setThinkingSteps(prev => [...prev, content]);
+                        },
+                        onQuickReplies: (replies: SSEQuickReply[]) => {
+                            accumulatedQuickReplies = replies.map((qr) => ({
+                                title: qr.title,
+                                payload: qr.payload,
+                            }));
+                        },
+                        onDone: (sessionId?: string) => {
+                            if (sessionId) {
                                 setConversations((prev) =>
                                     prev.map((conv) =>
                                         conv.id === convId
-                                            ? {
-                                                ...conv,
-                                                messages: conv.messages.map((m) =>
-                                                    m.id === assistantId
-                                                        ? { ...m, content: assistantContent }
-                                                        : m
-                                                ),
-                                            }
-                                            : conv
-                                    )
-                                );
-                            } else if (data.type === 'products') {
-                                // Formatted products injection
-                                assistantContent += '\n\n' + data.content;
-                                // Bug #21 Fix: Don't strip TIP - preserve tip from 'tip' event
-                                setConversations((prev) =>
-                                    prev.map((conv) =>
-                                        conv.id === convId
-                                            ? {
-                                                ...conv,
-                                                messages: conv.messages.map((m) =>
-                                                    m.id === assistantId
-                                                        ? { ...m, content: assistantContent }
-                                                        : m
-                                                ),
-                                            }
-                                            : conv
-                                    )
-                                );
-                            } else if (data.type === 'tip') {
-                                // Backend sends clean tip text, wrap with tags for parser
-                                const tipWithTags = `\n\n[TIP]\n${data.content}\n[/TIP]`;
-                                assistantContent += tipWithTags;
-                                // NOTE: Do NOT strip TIP tags here - we just added them intentionally!
-                                setConversations((prev) =>
-                                    prev.map((conv) =>
-                                        conv.id === convId
-                                            ? {
-                                                ...conv,
-                                                messages: conv.messages.map((m) =>
-                                                    m.id === assistantId
-                                                        ? { ...m, content: assistantContent }
-                                                        : m
-                                                ),
-                                            }
-                                            : conv
-                                    )
-                                );
-                            } else if (data.type === 'thinking') {
-                                // Real-time AI thoughts from Gemini Thinking Stream
-                                setThinkingSteps(prev => [...prev, data.content]);
-                            } else if (data.type === 'quick_replies') {
-                                // Backend sends {type: "quick_replies", replies: [...]}
-                                const repliesData = data.replies || data.content || [];
-                                quickReplies = repliesData.map((qr: { title: string; payload: string }) => ({
-                                    title: qr.title,
-                                    payload: qr.payload,
-                                }));
-                            } else if (data.type === 'done') {
-                                // Streaming complete - persist backend session_id
-                                if (data.session_id) {
-                                    setConversations((prev) =>
-                                        prev.map((conv) =>
-                                            conv.id === convId
-                                                ? { ...conv, backendSessionId: data.session_id }
-                                                : conv
-                                        )
-                                    );
-                                }
-                                break;
-                            } else if (data.type === 'error') {
-                                console.error('[Scoop] Stream error:', data.message || data.content);
-                                // Show error in chat - use backend message if available
-                                assistantContent = data.message || 'დაფიქსირდა შეცდომა. გთხოვთ სცადოთ თავიდან.';
-                                setConversations((prev) =>
-                                    prev.map((conv) =>
-                                        conv.id === convId
-                                            ? {
-                                                ...conv,
-                                                messages: conv.messages.map((m) =>
-                                                    m.id === assistantId
-                                                        ? { ...m, content: assistantContent }
-                                                        : m
-                                                ),
-                                            }
+                                            ? { ...conv, backendSessionId: sessionId }
                                             : conv
                                     )
                                 );
                             }
-                        } catch {
-                            // Ignore JSON parse errors for incomplete chunks
-                        }
-                    }
-
-                    // Exit loop after processing final buffer (BUG FIX #23)
-                    if (done) break;
-                }
+                        },
+                        onError: (message: string) => {
+                            console.error('[Scoop] Stream error:', message);
+                            assistantContent = message || 'დაფიქსირდა შეცდომა. გთხოვთ სცადოთ თავიდან.';
+                            setConversations((prev) =>
+                                prev.map((conv) =>
+                                    conv.id === convId
+                                        ? {
+                                            ...conv,
+                                            messages: conv.messages.map((m) =>
+                                                m.id === assistantId
+                                                    ? { ...m, content: assistantContent }
+                                                    : m
+                                            ),
+                                        }
+                                        : conv
+                                )
+                            );
+                        },
+                    },
+                });
 
                 // Final update with quick replies
-                if (quickReplies.length > 0) {
+                if (accumulatedQuickReplies.length > 0) {
                     setConversations((prev) =>
                         prev.map((conv) =>
                             conv.id === convId
@@ -606,7 +317,7 @@ export default function Chat() {
                                     ...conv,
                                     messages: conv.messages.map((m) =>
                                         m.id === assistantId
-                                            ? { ...m, quickReplies }
+                                            ? { ...m, quickReplies: accumulatedQuickReplies }
                                             : m
                                     ),
                                 }
@@ -617,32 +328,31 @@ export default function Chat() {
 
             } catch (error) {
                 console.error('[Scoop] Stream error:', error);
-                // Fallback to non-streaming on error
-                // Remove empty assistant message first
+                // Update assistant message with error notice
                 setConversations((prev) =>
                     prev.map((conv) =>
                         conv.id === convId
                             ? {
                                 ...conv,
-                                messages: conv.messages.filter((m) => m.id !== assistantId),
+                                messages: conv.messages.map((m) =>
+                                    m.id === assistantId
+                                        ? { ...m, content: '⚠️ კავშირის შეცდომა. გთხოვთ სცადოთ თავიდან.' }
+                                        : m
+                                ),
                             }
                             : conv
                     )
                 );
-                // Try non-streaming endpoint
-                await sendMessage(text);
-                return;
             } finally {
                 setIsLoading(false);
             }
         },
-        [activeId, createNewConversation, isLoading, userId, sendMessage]
+        [activeId, createNewConversation, isLoading, userId, streamMessage, conversations]
     );
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Use streaming endpoint for faster perceived response
-        sendMessageStream(input);
+        sendMessage(input);
     };
 
     // Render logic to support history + ChatResponse
@@ -706,7 +416,7 @@ export default function Chat() {
                                 userMessage={msg.content}
                                 assistantContent={nextMsg.content}
                                 quickReplies={isLastPair ? dynamicQuickReplies : []}
-                                onQuickReplyClick={(id, text) => sendMessageStream(text)}
+                                onQuickReplyClick={(id, text) => sendMessage(text)}
                             />
                         </div>
                     );
@@ -868,7 +578,7 @@ export default function Chat() {
 
                         {/* Mobile-only Pills - welcome-ის ქვემოთ */}
                         <div className="mobile-pills-wrapper flex lg:hidden">
-                            <QuickActionPills onSelect={(text) => sendMessageStream(text)} />
+                            <QuickActionPills onSelect={(text) => sendMessage(text)} />
                         </div>
 
                         {/* Centered Input */}
@@ -885,7 +595,7 @@ export default function Chat() {
                                         if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault();
                                             if (input.trim() && !isLoading) {
-                                                sendMessageStream(input);
+                                                sendMessage(input);
                                             }
                                         }
                                     }}
@@ -920,7 +630,7 @@ export default function Chat() {
 
                             {/* Desktop-only Pills - input-ის ქვემოთ */}
                             <div className="hidden lg:block">
-                                <QuickActionPills onSelect={(text) => sendMessageStream(text)} />
+                                <QuickActionPills onSelect={(text) => sendMessage(text)} />
                             </div>
                         </div>
 
@@ -951,7 +661,7 @@ export default function Chat() {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
                                                 if (input.trim() && !isLoading) {
-                                                    sendMessageStream(input);
+                                                    sendMessage(input);
                                                 }
                                             }
                                         }}
