@@ -56,6 +56,7 @@ export interface SSEEventHandlers {
     onQuickReplies: (replies: QuickReply[]) => void;
     onDone: (sessionId?: string) => void;
     onError: (message: string) => void;
+    onTruncationWarning?: (finishReason: string) => void;
 }
 
 /**

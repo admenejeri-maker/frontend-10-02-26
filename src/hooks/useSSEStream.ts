@@ -110,6 +110,12 @@ export function useSSEStream(): UseSSEStreamReturn {
                 return true;
             }
 
+            case 'truncation_warning': {
+                const finishReason = data.finish_reason as string | undefined;
+                handlers.onTruncationWarning?.(finishReason || 'MAX_TOKENS');
+                return true;
+            }
+
             default:
                 console.warn('[useSSEStream] Unknown event type:', type);
                 return false;
@@ -192,6 +198,14 @@ export function useSSEStream(): UseSSEStreamReturn {
                 if (done) break;
             }
 
+        } catch (error) {
+            // AbortError is expected when user clicks stop button - suppress it silently
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('[useSSEStream] Stream aborted by user');
+                return;
+            }
+            // Re-throw other errors to be handled by caller
+            throw error;
         } finally {
             isStreamingRef.current = false;
             abortControllerRef.current = null;

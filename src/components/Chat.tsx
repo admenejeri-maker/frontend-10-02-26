@@ -109,6 +109,7 @@ export default function Chat() {
 
     // UI-specific state (not part of session management)
     const [input, setInput] = useState('');
+    const [showContinueButton, setShowContinueButton] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
@@ -213,6 +214,7 @@ export default function Chat() {
                         user_id: userId,
                         message: text,
                         session_id: sessionIdToUse,
+                        save_history: localStorage.getItem('scoop_history_consent') === 'true',
                     },
                     handlers: {
                         onText: (content: string) => {
@@ -304,6 +306,10 @@ export default function Chat() {
                                         : conv
                                 )
                             );
+                        },
+                        onTruncationWarning: (finishReason: string) => {
+                            console.warn('[Scoop] Response truncated:', finishReason);
+                            setShowContinueButton(true);
                         },
                     },
                 });
@@ -417,15 +423,20 @@ export default function Chat() {
                                 assistantContent={nextMsg.content}
                                 quickReplies={isLastPair ? dynamicQuickReplies : []}
                                 onQuickReplyClick={(id, text) => sendMessage(text)}
+                                isStreaming={isLoading && isLastPair}
                             />
                         </div>
                     );
                     i++; // Skip assistant message as it's consumed by ChatResponse
                 }
-                // 2. User is last OR followed by empty assistant (streaming) & Loading -> Render ThinkingStepsLoader
-                else if (isLoading && (i === msgs.length - 1 || (nextMsg && nextMsg.role === 'assistant' && !nextMsg.content?.trim()))) {
+                // 2. User is TRULY the last or second-to-last message & Loading -> Render ThinkingStepsLoader
+                // Only show loader for the very last user message (prevents duplicate loaders)
+                else if (isLoading && (
+                    i === msgs.length - 1 || // User is literally the last message
+                    (i === msgs.length - 2 && nextMsg && nextMsg.role === 'assistant' && !nextMsg.content?.trim()) // User followed by empty assistant
+                )) {
                     items.push(
-                        <div key="loader" ref={lastUserMessageRef} className="w-full">
+                        <div key={`loader-${msg.id}`} ref={lastUserMessageRef} className="w-full">
                             <ThinkingStepsLoader userMessage={msg.content} realThoughts={thinkingSteps} />
                         </div>
                     );
@@ -449,6 +460,21 @@ export default function Chat() {
         return (
             <div className="chat-content-wrapper space-y-8">
                 {items}
+                {showContinueButton && (
+                    <div className="flex justify-center">
+                        <button
+                            onClick={() => {
+                                setShowContinueButton(false);
+                                // Use neutral prompt to avoid re-triggering SAFETY on same topic
+                                sendMessage("გთხოვთ გააგრძელოთ წინა პასუხი.");
+                            }}
+                            className="px-4 py-2 rounded-lg text-white mt-2 hover:opacity-90 transition-opacity"
+                            style={{ backgroundColor: '#0A7364' }}
+                        >
+                            გაგრძელება →
+                        </button>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
         );
@@ -682,7 +708,25 @@ export default function Chat() {
                                     {isLoading ? (
                                         <button
                                             type="button"
-                                            onClick={() => window.location.reload()}
+                                            onClick={() => {
+                                                abortStream();
+                                                setIsLoading(false);
+                                                // Clean up on abort: remove empty assistant messages & clear quick replies
+                                                setConversations((prev) =>
+                                                    prev.map((conv) =>
+                                                        conv.id === activeId
+                                                            ? {
+                                                                ...conv,
+                                                                messages: conv.messages
+                                                                    // Filter out assistant messages with empty content (aborted responses)
+                                                                    .filter((m) => !(m.role === 'assistant' && (!m.content || !m.content.trim())))
+                                                                    // Clear quick replies from all remaining messages
+                                                                    .map((m) => ({ ...m, quickReplies: [] })),
+                                                            }
+                                                            : conv
+                                                    )
+                                                );
+                                            }}
                                             aria-label="შეჩერება"
                                             className="flex-shrink-0 flex items-center justify-center p-3 rounded-xl transition-all duration-150 ease-in-out hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA]"
                                             style={{ width: '48px', height: '48px' }}

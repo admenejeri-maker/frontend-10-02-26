@@ -18,6 +18,7 @@ interface ChatResponseProps {
     assistantContent?: string
     quickReplies?: QuickReply[]
     onQuickReplyClick?: (id: string, text: string) => void
+    isStreaming?: boolean
 }
 
 // Default quick replies (fallback if backend doesn't send any)
@@ -33,6 +34,7 @@ export function ChatResponse({
     assistantContent,
     quickReplies = defaultQuickReplies,
     onQuickReplyClick,
+    isStreaming = false,
 }: ChatResponseProps) {
     // Parse products from markdown if content exists
     const parsed = assistantContent
@@ -62,15 +64,15 @@ export function ChatResponse({
                     <ScoopLogo className="w-4 h-4" />
                 </div>
 
-                {/* Content - uses stable content class */}
-                <div className="ai-response-content space-y-4">
+                {/* Content - uses stable content class + streaming cursor */}
+                <div className={`ai-response-content space-y-4 ${isStreaming ? 'streaming-cursor' : ''}`}>
                     {assistantContent ? (
                         hasProducts ? (
                             // Render with ProductCards
                             <>
                                 {/* Intro text */}
                                 {parsed.intro && (
-                                    <div className="prose prose-sm max-w-none text-foreground">
+                                    <div className={`prose prose-sm max-w-none text-foreground ${isStreaming ? 'animate-chunk' : ''}`}>
                                         <ReactMarkdown>{parsed.intro}</ReactMarkdown>
                                     </div>
                                 )}
@@ -94,7 +96,7 @@ export function ChatResponse({
 
                                 {/* Outro text */}
                                 {parsed.outro && (
-                                    <div className="prose prose-sm max-w-none text-foreground mt-4">
+                                    <div className={`prose prose-sm max-w-none text-foreground mt-4 ${isStreaming ? 'animate-chunk' : ''}`}>
                                         <ReactMarkdown>{parsed.outro}</ReactMarkdown>
                                     </div>
                                 )}
@@ -115,7 +117,7 @@ export function ChatResponse({
                         ) : (
                             // Fallback: render cleaned markdown (TIP already extracted)
                             <>
-                                <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:underline">
+                                <div className={`prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:underline ${isStreaming ? 'animate-chunk' : ''}`}>
                                     <ReactMarkdown>{parsed.intro || assistantContent}</ReactMarkdown>
                                 </div>
                                 {/* Practical Tip - Amber style */}

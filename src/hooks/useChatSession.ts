@@ -59,6 +59,7 @@ export function useChatSession(): UseChatSessionReturn {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [userId, setUserId] = useState<string>('');
+    const [consent, setConsent] = useState<string | null>(null);
     const [sessionsLoaded, setSessionsLoaded] = useState(false);
     const [showConsentModal, setShowConsentModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -76,6 +77,7 @@ export function useChatSession(): UseChatSessionReturn {
     useEffect(() => {
         // Check consent first
         const hasConsent = localStorage.getItem('scoop_history_consent');
+        setConsent(hasConsent);
         if (!hasConsent) {
             setShowConsentModal(true);
         }
@@ -90,8 +92,16 @@ export function useChatSession(): UseChatSessionReturn {
         }
     }, []);
 
-    // Load sessions from backend on mount
+    // Load sessions from backend on mount (only if user has consented)
     useEffect(() => {
+        // Guard: Only load sessions if user has explicitly consented to history saving
+        if (consent !== 'true') {
+            if (consent !== null) {
+                console.log('[Scoop] Skipping session load - user has not consented to history');
+            }
+            return;
+        }
+
         if (!userId || sessionsLoaded) return;
 
         const loadSessions = async () => {
@@ -124,7 +134,7 @@ export function useChatSession(): UseChatSessionReturn {
         };
 
         loadSessions();
-    }, [userId, sessionsLoaded]);
+    }, [userId, sessionsLoaded, consent]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Consent Handlers
@@ -132,11 +142,13 @@ export function useChatSession(): UseChatSessionReturn {
 
     const handleAcceptConsent = useCallback(() => {
         localStorage.setItem('scoop_history_consent', 'true');
+        setConsent('true');
         setShowConsentModal(false);
     }, []);
 
     const handleRejectConsent = useCallback(() => {
         localStorage.setItem('scoop_history_consent', 'false');
+        setConsent('false');
         setShowConsentModal(false);
     }, []);
 

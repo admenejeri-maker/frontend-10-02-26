@@ -802,6 +802,36 @@
   border-left: 3px solid var(--pine-green);
 }
 
+/* === STREAMING CURSOR ANIMATION === */
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.streaming-cursor::after {
+  content: '▌';
+  animation: cursorBlink 1s step-end infinite;
+  color: var(--pine-green);
+  margin-left: 2px;
+  font-weight: normal;
+}
+
+/* === FADE-IN TEXT CHUNK ANIMATION === */
+@keyframes fadeInChunk {
+  from { 
+    opacity: 0; 
+    transform: translateY(4px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.animate-chunk {
+  animation: fadeInChunk 0.15s ease-out forwards;
+}
+
 /* === ENHANCED THINKING LOADER === */
 @keyframes thinkingPulse {
 
