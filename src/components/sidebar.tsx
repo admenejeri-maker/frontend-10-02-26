@@ -340,6 +340,7 @@ export function Sidebar({
                                 {renderConversationGroup('დღეს', grouped.today)}
                                 {renderConversationGroup('გუშინ', grouped.yesterday)}
                                 {renderConversationGroup('წინა 7 დღე', grouped.previous7Days)}
+                                {renderConversationGroup('ძველი', grouped.older)}
                             </>
                         )}
                     </div>

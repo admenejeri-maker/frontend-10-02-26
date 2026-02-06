@@ -46,6 +46,9 @@ export interface UseChatSessionReturn {
 
     // Utility
     generateMessageId: () => string;
+
+    // Consent state
+    consent: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,7 +62,7 @@ export function useChatSession(): UseChatSessionReturn {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [userId, setUserId] = useState<string>('');
-    const [consent, setConsent] = useState<string | null>(null);
+    const [consent, setConsent] = useState<string | null>('true'); // Default to true - save history by default
     const [sessionsLoaded, setSessionsLoaded] = useState(false);
     const [showConsentModal, setShowConsentModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -75,12 +78,15 @@ export function useChatSession(): UseChatSessionReturn {
 
     // Initialize persistent userId on mount (client-side only to avoid hydration mismatch)
     useEffect(() => {
-        // Check consent first
-        const hasConsent = localStorage.getItem('scoop_history_consent');
-        setConsent(hasConsent);
+        // Check consent - default to 'true' (save history by default)
+        let hasConsent = localStorage.getItem('scoop_history_consent');
         if (!hasConsent) {
-            setShowConsentModal(true);
+            // Default: save history without asking
+            localStorage.setItem('scoop_history_consent', 'true');
+            hasConsent = 'true';
         }
+        setConsent(hasConsent);
+        // Popup disabled by default - user can opt-out from settings later
 
         const stored = localStorage.getItem('scoop_user_id');
         if (stored) {
@@ -277,5 +283,8 @@ export function useChatSession(): UseChatSessionReturn {
 
         // Utility
         generateMessageId: generateId,
+
+        // Consent state
+        consent,
     };
 }

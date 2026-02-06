@@ -158,14 +158,62 @@ export function parseProductsFromMarkdown(markdown: string): ParsedResponse {
 
         // Check for product name (bold text that's not a rank and not price)
         // Allow trailing whitespace for Gemini 3 compatibility
+        // BUG FIX #31: Skip numbered list items (e.g., "**1. თირკმელები...**")
+        // BUG FIX #32: Skip headers/warnings with colon (e.g., "**გაფრთხილება: ...**")
+        //             Skip very long lines (product names are typically under 60 chars)
+        // BUG FIX #33: Skip Georgian section headers (რეკომენდებული, პროდუქტები, etc.)
+        // BUG FIX #34: Support bracket format [Name] when AI inconsistently formats
         const productNameMatch = line.match(/^\*\*([^*]+)\*\*\s*$/);
-        if (productNameMatch && !line.includes('₾') && !line.includes('შემდეგი')) {
+        // Fallback: check for bracket format [Name] on its own line (not a markdown link with URL)
+        const bracketMatch = !productNameMatch && !line.includes('](') ? line.match(/^\[([^\]]+)\]\s*$/) : null;
+        const nameMatch = productNameMatch || bracketMatch;
+        const capturedName = nameMatch ? nameMatch[1] : null;
+        const isNumberedListItem = /^\*\*\d+\./.test(line);
+        const isHeaderOrWarning = capturedName && capturedName.includes(':');
+        const isTooLongForProductName = capturedName && capturedName.length > 60;
+
+        // Georgian section headers that should not be treated as product names
+        // BUG FIX #35: Added category headers used by AI (ბიუჯეტური, ალტერნატივა, პრემიუმი, etc.)
+        const georgianSectionHeaders = [
+            'რეკომენდებული',
+            'პროდუქტები',
+            'დანამატები',
+            'შეჯამება',
+            'დასკვნა',
+            'გაფრთხილება',
+            'შენიშვნა',
+            'მნიშვნელოვანი',
+            'რჩევა',
+            'რჩევები',
+            // Category headers from AI
+            'ბიუჯეტური',
+            'ალტერნატივა',
+            'პრემიუმი',
+            'საუკეთესო',
+            'პოპულარული',
+            'ეკონომიური',
+            'ტოპ არჩევანი',
+            // BUG FIX #36: Descriptive phrases AI uses as headers
+            'აუცილებელი დანამატი',
+            'დამატებითი პროდუქტი',
+            'ბონუს არჩევანი',
+            'სპეციალური შეთავაზება',
+            'მთავარი არჩევანი'
+        ];
+        // Check exact match OR if header starts with a known prefix (handles "რეკომენდებული (ოქროს სტანდარტი)" etc.)
+        const isGeorgianHeader = capturedName && (
+            georgianSectionHeaders.some(h => capturedName.trim().toLowerCase() === h.toLowerCase()) ||
+            georgianSectionHeaders.some(h => capturedName.trim().toLowerCase().startsWith(h.toLowerCase() + ' '))
+        );
+
+        if (capturedName && !line.includes('₾') && !line.includes('შემდეგი') &&
+            !isNumberedListItem && !isHeaderOrWarning && !isTooLongForProductName && !isGeorgianHeader) {
             if (!currentProduct) {
                 currentProduct = {};
                 introEnded = true;
             }
             if (!currentProduct.name) {
-                currentProduct.name = productNameMatch[1].trim();
+                currentProduct.name = capturedName.trim();
                 continue;
             }
         }

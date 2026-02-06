@@ -1,5 +1,5 @@
 /**
- * Group conversations by date (Today, Yesterday, Previous 7 Days)
+ * Group conversations by date (Today, Yesterday, Previous 7 Days, Older)
  */
 
 interface ConversationItem {
@@ -13,6 +13,7 @@ interface GroupedConversations {
     today: ConversationItem[];
     yesterday: ConversationItem[];
     previous7Days: ConversationItem[];
+    older: ConversationItem[];
 }
 
 export function groupConversationsByDate(conversations: ConversationItem[]): GroupedConversations {
@@ -27,6 +28,7 @@ export function groupConversationsByDate(conversations: ConversationItem[]): Gro
         today: [],
         yesterday: [],
         previous7Days: [],
+        older: [],
     };
 
     conversations.forEach((conv) => {
@@ -47,8 +49,10 @@ export function groupConversationsByDate(conversations: ConversationItem[]): Gro
             grouped.yesterday.push(conv);
         } else if (convDayStart >= sevenDaysAgo) {
             grouped.previous7Days.push(conv);
+        } else {
+            // Sessions older than 7 days go to 'older' category
+            grouped.older.push(conv);
         }
-        // Sessions older than 7 days are not shown (filtered out)
     });
 
     return grouped;

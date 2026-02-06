@@ -105,6 +105,7 @@ export default function Chat() {
         createNewConversation,
         loadSessionHistory,
         generateMessageId,
+        consent,
     } = useChatSession();
 
     // UI-specific state (not part of session management)
@@ -214,7 +215,7 @@ export default function Chat() {
                         user_id: userId,
                         message: text,
                         session_id: sessionIdToUse,
-                        save_history: localStorage.getItem('scoop_history_consent') === 'true',
+                        save_history: consent === 'true',
                     },
                     handlers: {
                         onText: (content: string) => {
