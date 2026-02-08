@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useRef } from 'react';
+import { apiFetch } from '../lib/apiClient';
 import type {
     QuickReply,
     SSEEventHandlers,
@@ -137,7 +138,7 @@ export function useSSEStream(): UseSSEStreamReturn {
         isStreamingRef.current = true;
 
         try {
-            const response = await fetch(url, {
+            const response = await apiFetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),

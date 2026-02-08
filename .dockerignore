@@ -1,0 +1,32 @@
+# ═══════════════════════════════════════════════════
+# Frontend .dockerignore — P1.5 Dockerfile Security
+# ═══════════════════════════════════════════════════
+
+# Dependencies (reinstalled in Docker)
+node_modules
+
+# Build output (rebuilt in Docker)
+.next
+
+# Version control
+.git
+.gitignore
+
+# Environment files
+.env.local
+.env*.local
+.env.development
+.env.test
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+
+# Agent / CI files
+.agent/
+.gemini/

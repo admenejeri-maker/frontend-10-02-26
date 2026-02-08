@@ -40,3 +40,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Security - Keys & Credentials
+*.key
+service-account*.json
+credentials*.json
+*-credentials.json
+*.secret
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db

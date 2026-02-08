@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from 'react';
 import type { QuickReply, Message, Conversation } from '@/types/api';
+import { apiFetch, enrollApiKey } from '../lib/apiClient';
 
 // Re-export types for backward compatibility
 export type { QuickReply, Message, Conversation };
@@ -89,13 +90,17 @@ export function useChatSession(): UseChatSessionReturn {
         // Popup disabled by default - user can opt-out from settings later
 
         const stored = localStorage.getItem('scoop_user_id');
+        let currentUserId: string;
         if (stored) {
-            setUserId(stored);
+            currentUserId = stored;
         } else {
-            const newId = `widget_${Math.random().toString(36).substring(2, 15)}`;
-            localStorage.setItem('scoop_user_id', newId);
-            setUserId(newId);
+            currentUserId = `widget_${Math.random().toString(36).substring(2, 15)}`;
+            localStorage.setItem('scoop_user_id', currentUserId);
         }
+        setUserId(currentUserId);
+
+        // Auto-enroll API key on first visit (fire-and-forget)
+        enrollApiKey(currentUserId, BACKEND_URL);
     }, []);
 
     // Load sessions from backend on mount (only if user has consented)
@@ -112,7 +117,7 @@ export function useChatSession(): UseChatSessionReturn {
 
         const loadSessions = async () => {
             try {
-                const res = await fetch(`${BACKEND_URL}/sessions/${userId}`);
+                const res = await apiFetch(`${BACKEND_URL}/sessions/${userId}`);
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -167,7 +172,7 @@ export function useChatSession(): UseChatSessionReturn {
 
         setIsDeleting(true);
         try {
-            const res = await fetch(`${BACKEND_URL}/user/${userId}/data`, {
+            const res = await apiFetch(`${BACKEND_URL}/user/${userId}/data`, {
                 method: 'DELETE',
             });
 
@@ -200,7 +205,7 @@ export function useChatSession(): UseChatSessionReturn {
     const loadSessionHistory = useCallback(async (sessionId: string) => {
         setIsLoadingHistory(true);
         try {
-            const res = await fetch(`${BACKEND_URL}/session/${sessionId}/history`);
+            const res = await apiFetch(`${BACKEND_URL}/session/${sessionId}/history`);
             if (!res.ok) return;
             const data = await res.json();
 
