@@ -1,0 +1,56 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-lint:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: Build production bundle
+        env:
+          NEXT_PUBLIC_BACKEND_URL: https://backend-ai-1-fjc4rn4wqa-ew.a.run.app
+        run: npm run build
+
+  security-check:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for secrets in code
+        run: |
+          echo "Scanning for hardcoded API keys..."
+          if grep -rn "AIza\|sk-\|mongodb+srv://[^{}\$]" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules .; then
+            echo "::warning::Potential secrets found in source code!"
+          else
+            echo "No hardcoded secrets detected."
+          fi
+
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high || echo "::warning::High severity vulnerabilities found"
