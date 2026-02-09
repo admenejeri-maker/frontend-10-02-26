@@ -117,7 +117,7 @@ export function useChatSession(): UseChatSessionReturn {
 
         const loadSessions = async () => {
             try {
-                const res = await apiFetch(`${BACKEND_URL}/sessions/${userId}`);
+                const res = await apiFetch(`${BACKEND_URL}/api/v1/sessions/${userId}`);
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -172,7 +172,7 @@ export function useChatSession(): UseChatSessionReturn {
 
         setIsDeleting(true);
         try {
-            const res = await apiFetch(`${BACKEND_URL}/user/${userId}/data`, {
+            const res = await apiFetch(`${BACKEND_URL}/api/v1/user/${userId}/data`, {
                 method: 'DELETE',
             });
 
@@ -205,7 +205,7 @@ export function useChatSession(): UseChatSessionReturn {
     const loadSessionHistory = useCallback(async (sessionId: string) => {
         setIsLoadingHistory(true);
         try {
-            const res = await apiFetch(`${BACKEND_URL}/session/${sessionId}/history`);
+            const res = await apiFetch(`${BACKEND_URL}/api/v1/session/${sessionId}/history`);
             if (!res.ok) return;
             const data = await res.json();
 

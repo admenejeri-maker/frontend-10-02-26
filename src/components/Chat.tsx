@@ -210,7 +210,7 @@ export default function Chat() {
                 let accumulatedQuickReplies: QuickReply[] = [];
 
                 await streamMessage({
-                    url: `${BACKEND_URL}/chat/stream`,
+                    url: `${BACKEND_URL}/api/v1/chat/stream`,
                     body: {
                         user_id: userId,
                         message: text,

@@ -93,7 +93,7 @@ export async function enrollApiKey(
     if (getApiKey()) return; // Already enrolled
 
     try {
-        const res = await fetch(`${backendUrl}/auth/key`, {
+        const res = await fetch(`${backendUrl}/api/v1/auth/key`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: userId }),
@@ -152,7 +152,7 @@ export async function apiFetch(
     if (response.status === 403 && CSRF_PROTECTED_METHODS.has(method)) {
         try {
             const errorData = await response.clone().json();
-            if (errorData.error_code?.startsWith('CSRF_')) {
+            if (errorData.error?.code?.startsWith('CSRF_')) {
                 console.warn('[Scoop] CSRF token rejected, refreshing...');
                 clearCsrfToken();
 
