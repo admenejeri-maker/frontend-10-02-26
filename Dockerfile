@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Set production backend URL
-ENV NEXT_PUBLIC_BACKEND_URL=https://backend-ai-1-fjc4rn4wqa-ew.a.run.app
+ENV NEXT_PUBLIC_BACKEND_URL=https://backend-ai-1-890364845413.europe-west1.run.app
 
 # Build the application
 RUN npm run build
