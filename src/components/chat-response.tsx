@@ -50,7 +50,7 @@ export function ChatResponse({
     const hasProducts = parsed.products.length > 0;
 
     return (
-        <div className="space-y-6 w-full">
+        <div className="space-y-6 w-full" data-testid="chat-response">
             {/* User message */}
             {userMessage && (
                 <div className="flex justify-end">

@@ -275,6 +275,7 @@ export function Sidebar() {
                             <button
                                 key={conv.id}
                                 onClick={() => handleSelect(conv.id)}
+                                data-testid={`sidebar-conversation-${conv.id}`}
                                 className={`w-full min-w-0 text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 group relative overflow-hidden cursor-pointer ${isActive
                                     ? 'bg-green-50 text-foreground font-medium shadow-sm'
                                     : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground'
@@ -322,7 +323,7 @@ export function Sidebar() {
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
             >
-                <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden">
+                <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden" data-testid="sidebar-container">
                     {/* New conversation button - Gemini Style */}
                     <div className="p-4">
                         <button
@@ -330,6 +331,7 @@ export function Sidebar() {
                             aria-label="ახალი საუბრის დაწყება"
                             tabIndex={0}
                             className="flex items-center gap-3 py-3 px-4 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-150 ease-in-out active:scale-[0.98] cursor-pointer"
+                            data-testid="sidebar-new-chat"
                         >
                             <PenLine className="w-5 h-5" strokeWidth={1.5} />
                             <span className="text-base font-medium">ახალი საუბარი</span>
@@ -340,6 +342,7 @@ export function Sidebar() {
                     <button
                         onClick={closeSidebar}
                         className="close-btn-modern absolute top-4 right-4 lg:hidden z-50"
+                        data-testid="sidebar-close"
                         aria-label="დახურვა"
                     >
                         <X className="w-5 h-5" strokeWidth={1.5} />

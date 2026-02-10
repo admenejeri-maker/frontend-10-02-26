@@ -9,7 +9,7 @@ interface ChatLoaderProps {
 
 export function ChatLoader({ userMessage }: ChatLoaderProps) {
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" data-testid="chat-loader">
             {/* User message */}
             {userMessage && (
                 <div className="flex justify-end">

@@ -51,7 +51,7 @@ export function EmptyScreen({ setInput }: EmptyScreenProps) {
 
             {/* Content area - uses stable content class */}
             <div className="ai-response-content">
-                <div className="text-center mb-12">
+                <div className="text-center mb-12" data-testid="welcome-section">
                     <div className="flex items-center justify-center gap-3 mb-3">
                         <ScoopLogo className="w-10 h-10" />
                         <h1 className="text-3xl font-bold text-primary">Scoop AI ასისტენტი</h1>
@@ -66,6 +66,7 @@ export function EmptyScreen({ setInput }: EmptyScreenProps) {
                         <button
                             key={category.id}
                             onClick={() => setInput(category.message)}
+                            data-testid={`category-card-${category.id}`}
                             className="group flex items-start gap-4 p-5 rounded-xl border border-[#E5E7EB] bg-card hover:border-[#0A7364] hover:bg-[#0A7364]/5 hover:shadow-md transition-all duration-200 text-left cursor-pointer active:scale-95"
                         >
                             <div

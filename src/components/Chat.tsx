@@ -35,7 +35,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:808
 // Gemini-style Welcome Section (centered layout)
 function WelcomeSection() {
     return (
-        <div className="gemini-welcome">
+        <div className="gemini-welcome" data-testid="welcome-section">
             <div className="flex items-center justify-center gap-2 mb-3">
                 <ScoopLogo className="w-8 h-8" />
             </div>
@@ -62,6 +62,7 @@ function QuickActionPills({ onSelect }: { onSelect: (text: string) => void }) {
                     key={pill.text}
                     onClick={() => onSelect(pill.text)}
                     className="quick-pill"
+                    data-testid={`quick-pill-${pill.text}`}
                 >
                     <span>{pill.text}</span>
                 </button>
@@ -452,7 +453,7 @@ export default function Chat() {
         }
 
         return (
-            <div className="chat-content-wrapper space-y-8">
+            <div className="chat-content-wrapper space-y-8" data-testid="chat-message-list">
                 {items}
                 {showContinueButton && (
                     <div className="flex justify-center">
@@ -545,6 +546,7 @@ export default function Chat() {
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors"
+                        data-testid="chat-menu-button"
                     >
                         <Menu className="w-5 h-5" />
                     </button>
@@ -564,7 +566,7 @@ export default function Chat() {
                             className="p-2 rounded-lg transition-colors hover:bg-[#F3F4F6] group"
                             style={{ width: '40px', height: '40px' }}
                         >
-                            <Settings className="w-5 h-5 group-hover:text-[#374151]" style={{ color: '#6B7280' }} strokeWidth={1.5} />
+                            <Settings className="w-5 h-5 group-hover:text-[#374151]" style={{ color: '#6B7280' }} strokeWidth={1.5} data-testid="chat-settings-button" />
                         </button>
                     </div>
                 )}
@@ -601,6 +603,7 @@ export default function Chat() {
                                     placeholder="დაწერე შენი კითხვა..."
                                     disabled={isLoading}
                                     rows={1}
+                                    data-testid="chat-input"
                                     className="flex-1 min-w-0 bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none disabled:opacity-50 resize-none overflow-y-auto"
                                     style={{
                                         fontSize: '16px',
@@ -616,6 +619,7 @@ export default function Chat() {
                                     type="submit"
                                     disabled={!input.trim() || isLoading}
                                     aria-label="გაგზავნა"
+                                    data-testid="chat-send-button"
                                     className="flex-shrink-0 flex items-center justify-center p-3 rounded-xl transition-all duration-150 ease-in-out disabled:opacity-30 hover:bg-[#085C50]"
                                     style={{
                                         width: '48px',
@@ -667,6 +671,7 @@ export default function Chat() {
                                         placeholder="დაწერე შენი კითხვა..."
                                         disabled={isLoading}
                                         rows={1}
+                                        data-testid="chat-input-active"
                                         className="flex-1 min-w-0 bg-transparent text-gray-900 placeholder:text-gray-400 focus:outline-none disabled:opacity-50 resize-none overflow-y-auto"
                                         style={{
                                             fontSize: '16px',
@@ -702,6 +707,7 @@ export default function Chat() {
                                                 );
                                             }}
                                             aria-label="შეჩერება"
+                                            data-testid="chat-stop-button"
                                             className="flex-shrink-0 flex items-center justify-center p-3 rounded-xl transition-all duration-150 ease-in-out hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA]"
                                             style={{ width: '48px', height: '48px' }}
                                         >
