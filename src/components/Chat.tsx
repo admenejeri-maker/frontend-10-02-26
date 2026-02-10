@@ -10,12 +10,11 @@ import { ScoopLogo } from './scoop-logo';
 import { Sidebar } from './sidebar';
 import {
     useSSEStream,
-    useChatSession,
-    type QuickReply as SSEQuickReply,
-    type Message,
-    type Conversation,
-    type QuickReply,
+    type SSEQuickReply,
 } from '../hooks';
+import type { Message, Conversation, QuickReply } from '@/types/api';
+import { useSessionStore } from '../stores/useSessionStore';
+import { useUIStore } from '../stores/useUIStore';
 
 // Backend API URL - Production Cloud Run
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
@@ -85,40 +84,74 @@ function MessageBubble({ message }: { message: Message }) {
 
 // Main Chat Component
 export default function Chat() {
-    // Session management hook (handles conversations, userId, consent, etc.)
-    const {
-        conversations,
-        setConversations,
-        activeId,
-        setActiveId,
-        activeConversation,
-        userId,
-        isLoadingHistory,
-        showConsentModal,
-        handleAcceptConsent,
-        handleRejectConsent,
-        showDeleteConfirm,
-        setShowDeleteConfirm,
-        isDeleting,
-        handleDeleteData,
-        startNewChat: hookStartNewChat,
-        createNewConversation,
-        loadSessionHistory,
-        generateMessageId,
-        consent,
-    } = useChatSession();
+    // ── Zustand: Session Store (granular selectors to minimize re-renders) ──
+    const conversations = useSessionStore((s) => s.conversations);
+    const activeId = useSessionStore((s) => s.activeId);
+    const userId = useSessionStore((s) => s.userId);
+    const consent = useSessionStore((s) => s.consent);
+    const isLoadingHistory = useSessionStore((s) => s.isLoadingHistory);
 
-    // UI-specific state (not part of session management)
+    // Actions (stable references — never cause re-renders)
+    const setActiveId = useSessionStore((s) => s.setActiveId);
+    const createConversation = useSessionStore((s) => s.createConversation);
+    const startNewChatAction = useSessionStore((s) => s.startNewChat);
+    const generateMessageId = useSessionStore((s) => s.generateMessageId);
+    const updateMessage = useSessionStore((s) => s.updateMessage);
+    const updateConversation = useSessionStore((s) => s.updateConversation);
+    const updateConversationMessages = useSessionStore((s) => s.updateConversationMessages);
+    const setConversations = useSessionStore((s) => s.setConversations);
+    const initializeSession = useSessionStore((s) => s.initializeSession);
+    const loadSessions = useSessionStore((s) => s.loadSessions);
+    const loadSessionHistory = useSessionStore((s) => s.loadSessionHistory);
+
+    // ── Zustand: UI Store ──
+    const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+    const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+    const showConsentModal = useUIStore((s) => s.showConsentModal);
+    const setShowConsentModal = useUIStore((s) => s.setShowConsentModal);
+    const showDeleteConfirm = useUIStore((s) => s.showDeleteConfirm);
+    const openDeleteConfirm = useUIStore((s) => s.openDeleteConfirm);
+    const closeDeleteConfirm = useUIStore((s) => s.closeDeleteConfirm);
+    const isDeleting = useUIStore((s) => s.isDeleting);
+    const setIsDeleting = useUIStore((s) => s.setIsDeleting);
+
+    // Consent handlers from session store (write to localStorage + Zustand)
+    const handleAcceptConsent = useSessionStore((s) => s.handleAcceptConsent);
+    const handleRejectConsent = useSessionStore((s) => s.handleRejectConsent);
+    const handleDeleteDataAction = useSessionStore((s) => s.handleDeleteData);
+
+    // Derived state
+    const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
+
+    // ── Local UI state (component-level, not shared) ──
     const [input, setInput] = useState('');
     const [showContinueButton, setShowContinueButton] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const lastUserMessageRef = useRef<HTMLDivElement>(null);
 
     // SSE Stream hook for message streaming
     const { streamMessage, abortStream } = useSSEStream();
+
+    // ── Initialization: hydrate session from localStorage on mount ──
+    useEffect(() => {
+        initializeSession();
+    }, [initializeSession]);
+
+    // ── Load sessions when userId + consent are ready ──
+    useEffect(() => {
+        if (consent === 'true' && userId) {
+            loadSessions();
+        }
+    }, [consent, userId, loadSessions]);
+
+    // ── Show consent modal if consent is null (first visit) ──
+    useEffect(() => {
+        if (consent === null) {
+            setShowConsentModal(true);
+        }
+    }, [consent, setShowConsentModal]);
 
     // Auto-scroll: scroll მხოლოდ ერთხელ loading დაწყებისას
     useEffect(() => {
@@ -132,12 +165,35 @@ export default function Chat() {
         }
     }, [isLoading]); // მხოლოდ isLoading, არა messages!
 
+    // Consent accept handler: write to stores + close modal
+    const onAcceptConsent = useCallback(() => {
+        handleAcceptConsent();
+        setShowConsentModal(false);
+    }, [handleAcceptConsent, setShowConsentModal]);
+
+    // Consent reject handler: write to stores + close modal
+    const onRejectConsent = useCallback(() => {
+        handleRejectConsent();
+        setShowConsentModal(false);
+    }, [handleRejectConsent, setShowConsentModal]);
+
+    // Delete data handler: delegate to store action with UI state coordination
+    const handleDeleteData = useCallback(async () => {
+        setIsDeleting(true);
+        try {
+            await handleDeleteDataAction();
+        } finally {
+            setIsDeleting(false);
+            closeDeleteConfirm();
+        }
+    }, [handleDeleteDataAction, setIsDeleting, closeDeleteConfirm]);
+
     // Wrapper for startNewChat to also clear local UI state
     const startNewChat = useCallback(() => {
-        hookStartNewChat();
+        startNewChatAction();
         setInput('');
         setSidebarOpen(false);
-    }, [hookStartNewChat]);
+    }, [startNewChatAction, setSidebarOpen]);
 
     // Send message using SSE streaming endpoint
     const sendMessage = useCallback(
@@ -146,7 +202,7 @@ export default function Chat() {
 
             let convId = activeId;
             if (!convId) {
-                convId = createNewConversation();
+                convId = createConversation();
             }
 
             setInput('');
@@ -163,8 +219,10 @@ export default function Chat() {
             };
 
             // Add user message immediately
-            setConversations((prev) =>
-                prev.map((conv) =>
+            // We read current conversations from the store to update
+            const currentConvs = useSessionStore.getState().conversations;
+            setConversations(
+                currentConvs.map((conv) =>
                     conv.id === convId
                         ? {
                             ...conv,
@@ -177,8 +235,9 @@ export default function Chat() {
 
             // Add empty assistant message that we'll update progressively
             const assistantId = generateMessageId();
-            setConversations((prev) =>
-                prev.map((conv) =>
+            const updatedConvs = useSessionStore.getState().conversations;
+            setConversations(
+                updatedConvs.map((conv) =>
                     conv.id === convId
                         ? {
                             ...conv,
@@ -190,7 +249,7 @@ export default function Chat() {
 
             try {
                 // Get backendSessionId from active conversation if available
-                const activeConv = conversations.find(c => c.id === convId);
+                const activeConv = useSessionStore.getState().conversations.find(c => c.id === convId);
                 const sessionIdToUse = activeConv?.backendSessionId || convId;
 
                 // DEBUG: Log session persistence for amnesia debugging
@@ -220,55 +279,16 @@ export default function Chat() {
                     handlers: {
                         onText: (content: string) => {
                             assistantContent += content;
-                            setConversations((prev) =>
-                                prev.map((conv) =>
-                                    conv.id === convId
-                                        ? {
-                                            ...conv,
-                                            messages: conv.messages.map((m) =>
-                                                m.id === assistantId
-                                                    ? { ...m, content: assistantContent }
-                                                    : m
-                                            ),
-                                        }
-                                        : conv
-                                )
-                            );
+                            updateMessage(convId!, assistantId, { content: assistantContent });
                         },
                         onProducts: (content: string) => {
                             assistantContent += '\n\n' + content;
-                            setConversations((prev) =>
-                                prev.map((conv) =>
-                                    conv.id === convId
-                                        ? {
-                                            ...conv,
-                                            messages: conv.messages.map((m) =>
-                                                m.id === assistantId
-                                                    ? { ...m, content: assistantContent }
-                                                    : m
-                                            ),
-                                        }
-                                        : conv
-                                )
-                            );
+                            updateMessage(convId!, assistantId, { content: assistantContent });
                         },
                         onTip: (tipText: string) => {
                             const tipWithTags = `\n\n[TIP]\n${tipText}\n[/TIP]`;
                             assistantContent += tipWithTags;
-                            setConversations((prev) =>
-                                prev.map((conv) =>
-                                    conv.id === convId
-                                        ? {
-                                            ...conv,
-                                            messages: conv.messages.map((m) =>
-                                                m.id === assistantId
-                                                    ? { ...m, content: assistantContent }
-                                                    : m
-                                            ),
-                                        }
-                                        : conv
-                                )
-                            );
+                            updateMessage(convId!, assistantId, { content: assistantContent });
                         },
                         onThinking: (content: string) => {
                             setThinkingSteps(prev => [...prev, content]);
@@ -281,32 +301,13 @@ export default function Chat() {
                         },
                         onDone: (sessionId?: string) => {
                             if (sessionId) {
-                                setConversations((prev) =>
-                                    prev.map((conv) =>
-                                        conv.id === convId
-                                            ? { ...conv, backendSessionId: sessionId }
-                                            : conv
-                                    )
-                                );
+                                updateConversation(convId!, { backendSessionId: sessionId });
                             }
                         },
                         onError: (message: string) => {
                             console.error('[Scoop] Stream error:', message);
                             assistantContent = message || 'დაფიქსირდა შეცდომა. გთხოვთ სცადოთ თავიდან.';
-                            setConversations((prev) =>
-                                prev.map((conv) =>
-                                    conv.id === convId
-                                        ? {
-                                            ...conv,
-                                            messages: conv.messages.map((m) =>
-                                                m.id === assistantId
-                                                    ? { ...m, content: assistantContent }
-                                                    : m
-                                            ),
-                                        }
-                                        : conv
-                                )
-                            );
+                            updateMessage(convId!, assistantId, { content: assistantContent });
                         },
                         onTruncationWarning: (finishReason: string) => {
                             console.warn('[Scoop] Response truncated:', finishReason);
@@ -315,64 +316,25 @@ export default function Chat() {
                         onReconnecting: (attempt: number, maxAttempts: number) => {
                             console.warn(`[Scoop] Reconnecting... attempt ${attempt}/${maxAttempts}`);
                             assistantContent = `⏳ კავშირი წყდება... ხელახლა ცდა (${attempt}/${maxAttempts})`;
-                            setConversations((prev) =>
-                                prev.map((conv) =>
-                                    conv.id === convId
-                                        ? {
-                                            ...conv,
-                                            messages: conv.messages.map((m) =>
-                                                m.id === assistantId
-                                                    ? { ...m, content: assistantContent }
-                                                    : m
-                                            ),
-                                        }
-                                        : conv
-                                )
-                            );
+                            updateMessage(convId!, assistantId, { content: assistantContent });
                         },
                     },
                 });
 
                 // Final update with quick replies
                 if (accumulatedQuickReplies.length > 0) {
-                    setConversations((prev) =>
-                        prev.map((conv) =>
-                            conv.id === convId
-                                ? {
-                                    ...conv,
-                                    messages: conv.messages.map((m) =>
-                                        m.id === assistantId
-                                            ? { ...m, quickReplies: accumulatedQuickReplies }
-                                            : m
-                                    ),
-                                }
-                                : conv
-                        )
-                    );
+                    updateMessage(convId!, assistantId, { quickReplies: accumulatedQuickReplies });
                 }
 
             } catch (error) {
                 console.error('[Scoop] Stream error:', error);
                 // Update assistant message with error notice
-                setConversations((prev) =>
-                    prev.map((conv) =>
-                        conv.id === convId
-                            ? {
-                                ...conv,
-                                messages: conv.messages.map((m) =>
-                                    m.id === assistantId
-                                        ? { ...m, content: '⚠️ კავშირის შეცდომა. გთხოვთ სცადოთ თავიდან.' }
-                                        : m
-                                ),
-                            }
-                            : conv
-                    )
-                );
+                updateMessage(convId!, assistantId, { content: '⚠️ კავშირის შეცდომა. გთხოვთ სცადოთ თავიდან.' });
             } finally {
                 setIsLoading(false);
             }
         },
-        [activeId, createNewConversation, isLoading, userId, streamMessage, conversations]
+        [activeId, createConversation, isLoading, userId, streamMessage, consent, generateMessageId, updateMessage, updateConversation, setConversations]
     );
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -501,28 +463,7 @@ export default function Chat() {
 
     return (
         <div className="flex h-screen bg-background overflow-hidden w-full max-w-[1184px]">
-            <Sidebar
-                conversations={conversations.map((c) => ({
-                    id: c.id,
-                    title: c.title,
-                    created_at: c.created_at,
-                    updated_at: c.updated_at
-                }))}
-                activeId={activeId}
-                onNewChat={startNewChat}
-                onSelect={(id) => {
-                    setActiveId(id);
-                    setSidebarOpen(false);
-                    // Load history if not already loaded
-                    const conv = conversations.find(c => c.id === id);
-                    if (conv && conv.messages.length === 0) {
-                        loadSessionHistory(id);
-                    }
-                }}
-                onClose={() => setSidebarOpen(false)}
-                onDeleteData={() => setShowDeleteConfirm(true)}
-                isOpen={sidebarOpen}
-            />
+            <Sidebar />
 
             {/* Consent Modal */}
             {showConsentModal && (
@@ -536,13 +477,13 @@ export default function Chat() {
                         </p>
                         <div className="flex gap-3">
                             <button
-                                onClick={handleRejectConsent}
+                                onClick={onRejectConsent}
                                 className="flex-1 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
                             >
                                 არა
                             </button>
                             <button
-                                onClick={handleAcceptConsent}
+                                onClick={onAcceptConsent}
                                 className="flex-1 py-2 px-4 rounded-lg text-white hover:opacity-90"
                                 style={{ backgroundColor: '#0A7364' }}
                             >
@@ -567,7 +508,7 @@ export default function Chat() {
                         </p>
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setShowDeleteConfirm(false)}
+                                onClick={() => closeDeleteConfirm()}
                                 className="flex-1 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
                                 disabled={isDeleting}
                             >
@@ -731,8 +672,9 @@ export default function Chat() {
                                                 abortStream();
                                                 setIsLoading(false);
                                                 // Clean up on abort: remove empty assistant messages & clear quick replies
-                                                setConversations((prev) =>
-                                                    prev.map((conv) =>
+                                                const currentConvs = useSessionStore.getState().conversations;
+                                                setConversations(
+                                                    currentConvs.map((conv) =>
                                                         conv.id === activeId
                                                             ? {
                                                                 ...conv,

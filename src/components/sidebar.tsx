@@ -27,6 +27,8 @@ import {
 import { groupConversationsByDate } from '../lib/groupConversations';
 import { LucideIcon } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useSessionStore } from '../stores/useSessionStore';
+import { useUIStore } from '../stores/useUIStore';
 
 // 1. თემატური აიკონები (პრიორიტეტის მიხედვით)
 const THEME_ICONS: Record<string, LucideIcon> = {
@@ -189,39 +191,34 @@ function formatTime(dateStr?: string): string {
     });
 }
 
-interface ConversationItem {
-    id: string;
-    title: string;
-    created_at?: string;
-    updated_at?: string;
-}
+export function Sidebar() {
+    // ── Zustand: Session Store ──
+    const conversations = useSessionStore((s) => s.conversations);
+    const activeId = useSessionStore((s) => s.activeId);
+    const setActiveId = useSessionStore((s) => s.setActiveId);
+    const startNewChat = useSessionStore((s) => s.startNewChat);
+    const loadSessionHistory = useSessionStore((s) => s.loadSessionHistory);
 
-interface SidebarProps {
-    conversations: ConversationItem[];
-    activeId: string | null;
-    onNewChat: () => void;
-    onSelect: (id: string) => void;
-    onClose: () => void;
-    onDeleteData: () => void;
-    isOpen: boolean;
-}
+    // ── Zustand: UI Store ──
+    const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+    const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+    const openDeleteConfirm = useUIStore((s) => s.openDeleteConfirm);
 
-export function Sidebar({
-    conversations,
-    activeId,
-    onNewChat,
-    onSelect,
-    onClose,
-    onDeleteData,
-    isOpen,
-}: SidebarProps) {
     // Settings popover state
     const [showSettingsMenu, setShowSettingsMenu] = useState(false);
     const settingsMenuRef = useRef<HTMLDivElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
 
+    // Map conversations to sidebar items
+    const sidebarItems = conversations.map((c) => ({
+        id: c.id,
+        title: c.title,
+        created_at: c.created_at,
+        updated_at: c.updated_at,
+    }));
+
     // Group conversations by date
-    const grouped = groupConversationsByDate(conversations);
+    const grouped = groupConversationsByDate(sidebarItems);
 
     // Click outside to close settings popover
     useEffect(() => {
@@ -243,7 +240,24 @@ export function Sidebar({
         };
     }, [showSettingsMenu]);
 
-    const renderConversationGroup = (title: string, convs: ConversationItem[]) => {
+    const handleSelect = (id: string) => {
+        setActiveId(id);
+        setSidebarOpen(false);
+        // Load history if not already loaded
+        const conv = conversations.find(c => c.id === id);
+        if (conv && conv.messages.length === 0) {
+            loadSessionHistory(id);
+        }
+    };
+
+    const handleNewChat = () => {
+        startNewChat();
+        setSidebarOpen(false);
+    };
+
+    const closeSidebar = () => setSidebarOpen(false);
+
+    const renderConversationGroup = (title: string, convs: { id: string; title: string; created_at?: string; updated_at?: string }[]) => {
         if (convs.length === 0) return null;
 
         return (
@@ -260,7 +274,7 @@ export function Sidebar({
                         return (
                             <button
                                 key={conv.id}
-                                onClick={() => onSelect(conv.id)}
+                                onClick={() => handleSelect(conv.id)}
                                 className={`w-full min-w-0 text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 group relative overflow-hidden cursor-pointer ${isActive
                                     ? 'bg-green-50 text-foreground font-medium shadow-sm'
                                     : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground'
@@ -295,24 +309,24 @@ export function Sidebar({
     return (
         <>
             {/* Mobile backdrop */}
-            {isOpen && (
+            {sidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-                    onClick={onClose}
+                    onClick={closeSidebar}
                 />
             )}
 
             <div
                 className={`
                 fixed inset-y-0 left-0 z-50 flex-shrink-0 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 w-[85%] lg:w-72
-                ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
             >
                 <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden">
                     {/* New conversation button - Gemini Style */}
                     <div className="p-4">
                         <button
-                            onClick={onNewChat}
+                            onClick={handleNewChat}
                             aria-label="ახალი საუბრის დაწყება"
                             tabIndex={0}
                             className="flex items-center gap-3 py-3 px-4 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-150 ease-in-out active:scale-[0.98] cursor-pointer"
@@ -324,7 +338,7 @@ export function Sidebar({
 
                     {/* Close button - Mobile ONLY */}
                     <button
-                        onClick={onClose}
+                        onClick={closeSidebar}
                         className="close-btn-modern absolute top-4 right-4 lg:hidden z-50"
                         aria-label="დახურვა"
                     >
@@ -376,7 +390,7 @@ export function Sidebar({
                                 <button
                                     onClick={() => {
                                         setShowSettingsMenu(false);
-                                        onDeleteData();
+                                        openDeleteConfirm();
                                     }}
                                     className="flex items-center gap-2 text-sm text-red-500 hover:bg-red-50 transition-colors w-full px-4 py-2.5"
                                 >

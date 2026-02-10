@@ -11,11 +11,3 @@ export type {
     SSEStreamOptions,
     UseSSEStreamReturn,
 } from './useSSEStream';
-
-export { useChatSession } from './useChatSession';
-export type {
-    Conversation,
-    Message,
-    QuickReply,
-    UseChatSessionReturn,
-} from './useChatSession';

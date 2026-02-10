@@ -1,3 +1,7 @@
+/**
+ * @deprecated This hook is superseded by Zustand stores (useSessionStore, useUIStore).
+ * Kept for backward compatibility only. Do not use in new code.
+ */
 'use client';
 
 import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from 'react';
