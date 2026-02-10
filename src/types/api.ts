@@ -57,6 +57,7 @@ export interface SSEEventHandlers {
     onDone: (sessionId?: string) => void;
     onError: (message: string) => void;
     onTruncationWarning?: (finishReason: string) => void;
+    onReconnecting?: (attempt: number, maxAttempts: number) => void;
 }
 
 /**

@@ -312,6 +312,24 @@ export default function Chat() {
                             console.warn('[Scoop] Response truncated:', finishReason);
                             setShowContinueButton(true);
                         },
+                        onReconnecting: (attempt: number, maxAttempts: number) => {
+                            console.warn(`[Scoop] Reconnecting... attempt ${attempt}/${maxAttempts}`);
+                            assistantContent = `⏳ კავშირი წყდება... ხელახლა ცდა (${attempt}/${maxAttempts})`;
+                            setConversations((prev) =>
+                                prev.map((conv) =>
+                                    conv.id === convId
+                                        ? {
+                                            ...conv,
+                                            messages: conv.messages.map((m) =>
+                                                m.id === assistantId
+                                                    ? { ...m, content: assistantContent }
+                                                    : m
+                                            ),
+                                        }
+                                        : conv
+                                )
+                            );
+                        },
                     },
                 });
 

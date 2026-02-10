@@ -20,6 +20,54 @@ import type {
 export type { QuickReply, SSEEventHandlers, SSEStreamOptions, UseSSEStreamReturn };
 
 // ============================================================================
+// Reconnect Configuration
+// ============================================================================
+
+const RECONNECT_CONFIG = {
+    maxAttempts: 3,
+    baseDelayMs: 1000,
+    backoffMultiplier: 2,
+} as const;
+
+/** HTTP status codes that indicate a transient server error worth retrying */
+const RETRYABLE_HTTP_STATUSES = new Set([502, 503, 504]);
+
+/**
+ * Determine if an error is retryable (transient network/server issue)
+ * AbortError and client errors (4xx) are NOT retryable.
+ */
+function isRetryableError(error: unknown): boolean {
+    if (error instanceof Error && error.name === 'AbortError') return false;
+    // Network errors (fetch rejects with TypeError for network failures)
+    if (error instanceof TypeError) return true;
+    // Our own retryable HTTP status errors (thrown as Error with status in message)
+    if (error instanceof Error && error.message.startsWith('HTTP ')) {
+        const status = parseInt(error.message.slice(5), 10);
+        return RETRYABLE_HTTP_STATUSES.has(status);
+    }
+    return false;
+}
+
+/**
+ * Abortable delay — resolves after `ms` milliseconds,
+ * but rejects immediately if the AbortController signal fires.
+ */
+function abortableDelay(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+        }
+        const timer = setTimeout(resolve, ms);
+        const onAbort = () => {
+            clearTimeout(timer);
+            reject(new DOMException('Aborted', 'AbortError'));
+        };
+        signal?.addEventListener('abort', onAbort, { once: true });
+    });
+}
+
+// ============================================================================
 // Hook Implementation
 // ============================================================================
 
@@ -137,76 +185,117 @@ export function useSSEStream(): UseSSEStreamReturn {
         abortControllerRef.current = new AbortController();
         isStreamingRef.current = true;
 
+        const { maxAttempts, baseDelayMs, backoffMultiplier } = RECONNECT_CONFIG;
+        let lastError: unknown = null;
+
         try {
-            const response = await apiFetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: abortControllerRef.current.signal,
-            });
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    const response = await apiFetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                        signal: abortControllerRef.current.signal,
+                    });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
 
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('No response body');
-            }
+                    const reader = response.body?.getReader();
+                    if (!reader) {
+                        throw new Error('No response body');
+                    }
 
-            const decoder = new TextDecoder();
-            let buffer = '';
+                    const decoder = new TextDecoder();
+                    let buffer = '';
 
-            while (true) {
-                const { done, value } = await reader.read();
+                    while (true) {
+                        const { done, value } = await reader.read();
 
-                // Decode chunk if present
-                if (value) {
-                    buffer += decoder.decode(value, { stream: true });
-                }
+                        // Decode chunk if present
+                        if (value) {
+                            buffer += decoder.decode(value, { stream: true });
+                        }
 
-                // BUG FIX #23: Flush TextDecoder's internal buffer on stream end
-                // Georgian UTF-8 chars are 3 bytes - chunk boundaries may split mid-character
-                if (done) {
-                    buffer += decoder.decode(); // Final flush
-                }
+                        // BUG FIX #23: Flush TextDecoder's internal buffer on stream end
+                        // Georgian UTF-8 chars are 3 bytes - chunk boundaries may split mid-character
+                        if (done) {
+                            buffer += decoder.decode(); // Final flush
+                        }
 
-                // SSE events are separated by double newline
-                const events = buffer.split('\n\n');
-                // Keep incomplete event in buffer
-                buffer = events.pop() || '';
+                        // SSE events are separated by double newline
+                        const events = buffer.split('\n\n');
+                        // Keep incomplete event in buffer
+                        buffer = events.pop() || '';
 
-                for (const eventString of events) {
-                    const parsed = parseSSEEvent(eventString);
-                    if (!parsed) continue;
+                        for (const eventString of events) {
+                            const parsed = parseSSEEvent(eventString);
+                            if (!parsed) continue;
 
-                    // Enhanced debug logging
-                    console.log(
-                        '[DEBUG SSE]',
-                        parsed.type,
-                        'keys=' + Object.keys(parsed.data).join(','),
-                        (parsed.data.content as string)?.slice?.(0, 50) ||
-                        (parsed.data.text as string)?.slice?.(0, 50) ||
-                        ((parsed.data.options as unknown[])?.length ? `${(parsed.data.options as unknown[]).length} options` : '') ||
-                        JSON.stringify(parsed.data).slice(0, 60)
+                            // Enhanced debug logging
+                            console.log(
+                                '[DEBUG SSE]',
+                                parsed.type,
+                                'keys=' + Object.keys(parsed.data).join(','),
+                                (parsed.data.content as string)?.slice?.(0, 50) ||
+                                (parsed.data.text as string)?.slice?.(0, 50) ||
+                                ((parsed.data.options as unknown[])?.length ? `${(parsed.data.options as unknown[]).length} options` : '') ||
+                                JSON.stringify(parsed.data).slice(0, 60)
+                            );
+
+                            dispatchEvent(parsed.type, parsed.data, handlers);
+                            if (parsed.type === 'done') break;
+                        }
+
+                        // Exit loop after processing final buffer
+                        if (done) break;
+                    }
+
+                    // Stream completed successfully — exit retry loop
+                    return;
+
+                } catch (error) {
+                    lastError = error;
+
+                    // AbortError = user clicked Stop — exit immediately, no retry
+                    if (error instanceof Error && error.name === 'AbortError') {
+                        console.log('[useSSEStream] Stream aborted by user');
+                        return;
+                    }
+
+                    // Non-retryable error — throw immediately
+                    if (!isRetryableError(error)) {
+                        throw error;
+                    }
+
+                    // Max attempts reached — throw
+                    if (attempt >= maxAttempts) {
+                        console.error(`[useSSEStream] All ${maxAttempts} attempts exhausted`);
+                        throw error;
+                    }
+
+                    // Notify UI about reconnection attempt
+                    const delayMs = baseDelayMs * Math.pow(backoffMultiplier, attempt - 1);
+                    console.warn(
+                        `[useSSEStream] Attempt ${attempt}/${maxAttempts} failed, retrying in ${delayMs}ms...`,
+                        error
                     );
+                    handlers.onReconnecting?.(attempt, maxAttempts);
 
-                    const shouldBreak = dispatchEvent(parsed.type, parsed.data, handlers);
-                    if (parsed.type === 'done') break;
+                    // Wait with exponential backoff (abortable)
+                    try {
+                        await abortableDelay(delayMs, abortControllerRef.current.signal);
+                    } catch (delayError) {
+                        // User aborted during backoff wait
+                        if (delayError instanceof Error && delayError.name === 'AbortError') {
+                            console.log('[useSSEStream] Reconnect aborted by user during backoff');
+                            return;
+                        }
+                        throw delayError;
+                    }
                 }
-
-                // Exit loop after processing final buffer
-                if (done) break;
             }
-
-        } catch (error) {
-            // AbortError is expected when user clicks stop button - suppress it silently
-            if (error instanceof Error && error.name === 'AbortError') {
-                console.log('[useSSEStream] Stream aborted by user');
-                return;
-            }
-            // Re-throw other errors to be handled by caller
-            throw error;
         } finally {
             isStreamingRef.current = false;
             abortControllerRef.current = null;
