@@ -1134,3 +1134,35 @@
     display: none;
   }
 }
+
+/* ============================================
+   P3.6 Dynamic Import Loading Skeletons
+   ============================================ */
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.sidebar-skeleton {
+  width: 280px;
+  height: 100vh;
+  background: var(--muted);
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.chat-response-skeleton {
+  width: 100%;
+  height: 60px;
+  border-radius: 12px;
+  background: var(--muted);
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.product-card-skeleton {
+  width: 100%;
+  height: 180px;
+  border-radius: 16px;
+  background: var(--muted);
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}

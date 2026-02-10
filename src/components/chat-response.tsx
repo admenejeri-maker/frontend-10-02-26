@@ -1,11 +1,17 @@
 'use client';
 
 import type React from "react"
+import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown'
 import { ScoopLogo } from "./scoop-logo"
 import { RefreshCw, Lightbulb } from "lucide-react"
-import { ProductCard } from "./ProductCard"
 import { parseProductsFromMarkdown } from "@/lib/parseProducts"
+
+// Dynamic import: ProductCard only needed when products exist in response
+const ProductCard = dynamic(
+    () => import('./ProductCard').then(mod => ({ default: mod.ProductCard })),
+    { loading: () => <div className="product-card-skeleton" aria-hidden="true" /> }
+);
 
 interface QuickReply {
     id: string

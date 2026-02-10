@@ -1,13 +1,26 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Settings, Send, Menu, AlertTriangle, Square, ArrowRight } from 'lucide-react';
 // EmptyScreen removed - replaced with Gemini-style WelcomeSection + QuickActionPills
 import { ThinkingStepsLoader } from './thinking-steps-loader';
-import { ChatResponse } from './chat-response';
 import { ScoopLogo } from './scoop-logo';
-import { Sidebar } from './sidebar';
+
+// Dynamic imports for code splitting (P3.6 - Bundle Optimization)
+const Sidebar = dynamic(() => import('./sidebar').then(mod => ({ default: mod.Sidebar })), {
+    ssr: false,
+    loading: () => <div className="sidebar-skeleton" aria-hidden="true" />,
+});
+
+const ChatResponse = dynamic(
+    () => import('./chat-response').then(mod => ({ default: mod.ChatResponse })),
+    {
+        loading: () => <div className="chat-response-skeleton" aria-hidden="true" />,
+    }
+);
 import {
     useSSEStream,
     type SSEQuickReply,
