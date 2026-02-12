@@ -145,9 +145,19 @@ export default function Chat() {
     const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const lastUserMessageRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // SSE Stream hook for message streaming
     const { streamMessage, abortStream } = useSSEStream();
+
+    // Auto-resize textarea when input changes (covers both typing and voice transcription)
+    useEffect(() => {
+        const el = textareaRef.current;
+        if (el) {
+            el.style.height = '44px';
+            el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+        }
+    }, [input]);
 
     // ── Initialization: hydrate session from localStorage on mount ──
     useEffect(() => {
@@ -587,12 +597,9 @@ export default function Chat() {
                         <div className="gemini-centered-input">
                             <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 rounded-xl border border-[#E5E7EB] bg-white transition-all duration-150 ease-in-out focus-within:border-[#0A7364] hover:border-[#0A7364]">
                                 <textarea
+                                    ref={textareaRef}
                                     value={input}
-                                    onChange={(e) => {
-                                        setInput(e.target.value);
-                                        e.target.style.height = '44px';
-                                        e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-                                    }}
+                                    onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault();
@@ -661,12 +668,9 @@ export default function Chat() {
                             <div className="max-w-4xl mx-auto px-6 py-4">
                                 <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 rounded-xl border border-[#E5E7EB] bg-white transition-all duration-150 ease-in-out focus-within:border-[#0A7364] hover:border-[#0A7364]">
                                     <textarea
+                                        ref={textareaRef}
                                         value={input}
-                                        onChange={(e) => {
-                                            setInput(e.target.value);
-                                            e.target.style.height = '44px';
-                                            e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-                                        }}
+                                        onChange={(e) => setInput(e.target.value)}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
