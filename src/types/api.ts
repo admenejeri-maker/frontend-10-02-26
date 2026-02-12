@@ -113,3 +113,12 @@ export interface SessionHistoryResponse {
         content: string;
     }>;
 }
+
+/**
+ * Voice transcription API response
+ */
+export interface TranscriptionResponse {
+    text: string;
+    language: string;
+    duration_seconds: number;
+}

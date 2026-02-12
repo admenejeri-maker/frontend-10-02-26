@@ -9,8 +9,9 @@
 
 | პროექტი | GitHub | Production URL |
 |---------|--------|----------------|
-| **Frontend** | [scoop-vercel-fresh](https://github.com/Maqashable-284/scoop-vercel-fresh) | https://scoop-vercel-358331686110.europe-west1.run.app |
-| **Backend** | [scoop-generative-ai-sdk-28-04](https://github.com/Maqashable-284/scoop-generative-ai-sdk-28-04) | https://scoop-ai-sdk-358331686110.europe-west1.run.app |
+| **Frontend** | [frontend-10-02-26](https://github.com/admenejeri-maker/frontend-10-02-26) | https://scoop-frontend-890364845413.europe-west1.run.app |
+| **Backend** | [backend-10-02-26](https://github.com/admenejeri-maker/backend-10-02-26) | https://backend-ai-1-890364845413.europe-west1.run.app |
+| **Streamlit** | — | https://scoop-insights-890364845413.europe-west1.run.app |
 
 ---
 

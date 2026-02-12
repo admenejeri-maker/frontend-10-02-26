@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { Settings, Send, Menu, AlertTriangle, Square, ArrowRight } from 'lucide-react';
 // EmptyScreen removed - replaced with Gemini-style WelcomeSection + QuickActionPills
 import { ThinkingStepsLoader } from './thinking-steps-loader';
+import { VoiceInput } from './VoiceInput';
 import { ScoopLogo } from './scoop-logo';
 
 // Dynamic imports for code splitting (P3.6 - Bundle Optimization)
@@ -615,6 +616,12 @@ export default function Chat() {
                                         lineHeight: '1.5'
                                     }}
                                 />
+                                <VoiceInput
+                                    onTranscription={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
+                                    disabled={isLoading}
+                                    userId={userId}
+                                    sessionId={activeId || undefined}
+                                />
                                 <button
                                     type="submit"
                                     disabled={!input.trim() || isLoading}
@@ -682,6 +689,12 @@ export default function Chat() {
                                             border: 'none',
                                             lineHeight: '1.5'
                                         }}
+                                    />
+                                    <VoiceInput
+                                        onTranscription={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
+                                        disabled={isLoading}
+                                        userId={userId}
+                                        sessionId={activeConversation?.backendSessionId || activeId || undefined}
                                     />
                                     {isLoading ? (
                                         <button
