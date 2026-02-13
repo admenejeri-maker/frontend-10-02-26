@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Settings, Send, Menu, AlertTriangle, Square, ArrowRight } from 'lucide-react';
+import { Settings, Menu, AlertTriangle, Square, ArrowUp } from 'lucide-react';
 // EmptyScreen removed - replaced with Gemini-style WelcomeSection + QuickActionPills
 import { ThinkingStepsLoader } from './thinking-steps-loader';
 import { VoiceInput } from './VoiceInput';
@@ -77,18 +77,18 @@ function MessageBubble({ message }: { message: Message }) {
     if (message.role === 'user') {
         return (
             <div className="flex justify-end mb-4">
-                <div className="bg-primary text-primary-foreground px-4 py-2 rounded-xl max-w-[80%]" style={{ backgroundColor: '#0A7364', color: 'white' }}>
-                    <p className="text-sm">{message.content}</p>
+                <div className="px-5 py-3 rounded-[22px] rounded-br-sm max-w-[75%] shadow-sm" style={{ backgroundColor: '#0A7364', color: 'white' }}>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
             </div>
         );
     }
     return (
         <div className="flex gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center bg-card flex-shrink-0">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#f0f4f9]">
                 <ScoopLogo className="w-4 h-4" />
             </div>
-            <div className="flex-1 bg-card border border-border rounded-xl px-4 py-3 max-w-[85%]">
+            <div className="flex-1 max-w-full">
                 <div className="prose prose-sm max-w-none text-foreground">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
@@ -612,7 +612,7 @@ export default function Chat() {
 
                         {/* Centered Input */}
                         <div className="gemini-centered-input">
-                            <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 rounded-xl border border-[#E5E7EB] bg-white transition-all duration-150 ease-in-out focus-within:border-[#0A7364] hover:border-[#0A7364]">
+                            <form onSubmit={handleSubmit} className="relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8]">
                                 <textarea
                                     ref={textareaRef}
                                     value={input}
@@ -640,26 +640,29 @@ export default function Chat() {
                                         lineHeight: '1.5'
                                     }}
                                 />
-                                <VoiceInput
-                                    onTranscription={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
-                                    disabled={isLoading}
-                                    userId={userId}
-                                    sessionId={activeId || undefined}
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={!input.trim() || isLoading}
-                                    aria-label="გაგზავნა"
-                                    data-testid="chat-send-button"
-                                    className="flex-shrink-0 flex items-center justify-center p-3 rounded-xl transition-all duration-150 ease-in-out disabled:opacity-30 hover:bg-[#085C50]"
-                                    style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        backgroundColor: input.trim() ? '#0A7364' : 'transparent'
-                                    }}
-                                >
-                                    <ArrowRight style={{ width: '24px', height: '24px', color: input.trim() ? '#FFFFFF' : '#9CA3AF' }} strokeWidth={2} />
-                                </button>
+                                {input.trim().length > 0 ? (
+                                    <button
+                                        type="submit"
+                                        disabled={!input.trim() || isLoading}
+                                        aria-label="გაგზავნა"
+                                        data-testid="chat-send-button"
+                                        className="flex-shrink-0 flex items-center justify-center p-3 rounded-full transition-all duration-150 ease-in-out disabled:opacity-30 hover:bg-black/5"
+                                        style={{
+                                            width: '44px',
+                                            height: '44px',
+                                            color: '#0A7364'
+                                        }}
+                                    >
+                                        <ArrowUp size={20} strokeWidth={2.5} />
+                                    </button>
+                                ) : (
+                                    <VoiceInput
+                                        onTranscription={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
+                                        disabled={isLoading}
+                                        userId={userId}
+                                        sessionId={activeId || undefined}
+                                    />
+                                )}
                             </form>
 
                             {/* Desktop-only Pills - input-ის ქვემოთ */}
@@ -676,14 +679,14 @@ export default function Chat() {
                     /* ===== ACTIVE STATE: Messages + Bottom Input ===== */
                     <>
                         {/* Chat content - scrollable */}
-                        <div className="flex-1 chat-scroll-container bg-background">
+                        <div className="flex-1 chat-scroll-container bg-background pb-8">
                             {renderChatHistory()}
                         </div>
 
                         {/* Input area - fixed at bottom */}
-                        <div className="border-t border-gray-100 bg-white">
-                            <div className="max-w-4xl mx-auto px-6 py-4">
-                                <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 rounded-xl border border-[#E5E7EB] bg-white transition-all duration-150 ease-in-out focus-within:border-[#0A7364] hover:border-[#0A7364]">
+                        <div className="gemini-input-container">
+                            <div className="max-w-3xl mx-auto px-4 py-3">
+                                <form onSubmit={handleSubmit} className="relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8]">
                                     <textarea
                                         ref={textareaRef}
                                         value={input}
@@ -711,12 +714,6 @@ export default function Chat() {
                                             lineHeight: '1.5'
                                         }}
                                     />
-                                    <VoiceInput
-                                        onTranscription={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
-                                        disabled={isLoading}
-                                        userId={userId}
-                                        sessionId={activeConversation?.backendSessionId || activeId || undefined}
-                                    />
                                     {isLoading ? (
                                         <button
                                             type="button"
@@ -742,25 +739,32 @@ export default function Chat() {
                                             }}
                                             aria-label="შეჩერება"
                                             data-testid="chat-stop-button"
-                                            className="flex-shrink-0 flex items-center justify-center p-3 rounded-xl transition-all duration-150 ease-in-out hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA]"
-                                            style={{ width: '48px', height: '48px' }}
+                                            className="flex-shrink-0 flex items-center justify-center p-3 rounded-full transition-all duration-150 ease-in-out hover:bg-[#FEF2F2] border border-transparent hover:border-[#FECACA]"
+                                            style={{ width: '44px', height: '44px' }}
                                         >
                                             <Square style={{ width: '20px', height: '20px', color: '#CC3348', borderRadius: '2px' }} strokeWidth={0} fill="#CC3348" />
                                         </button>
-                                    ) : (
+                                    ) : input.trim().length > 0 ? (
                                         <button
                                             type="submit"
                                             disabled={!input.trim()}
                                             aria-label="გაგზავნა"
-                                            className="flex-shrink-0 flex items-center justify-center p-3 rounded-xl transition-all duration-150 ease-in-out disabled:opacity-30 hover:bg-[#085C50]"
+                                            className="flex-shrink-0 flex items-center justify-center p-3 rounded-full transition-all duration-150 ease-in-out disabled:opacity-30 hover:bg-black/5"
                                             style={{
-                                                width: '48px',
-                                                height: '48px',
-                                                backgroundColor: input.trim() ? '#0A7364' : 'transparent'
+                                                width: '44px',
+                                                height: '44px',
+                                                color: '#0A7364'
                                             }}
                                         >
-                                            <ArrowRight style={{ width: '24px', height: '24px', color: input.trim() ? '#FFFFFF' : '#9CA3AF' }} strokeWidth={2} />
+                                            <ArrowUp size={20} strokeWidth={2.5} />
                                         </button>
+                                    ) : (
+                                        <VoiceInput
+                                            onTranscription={(text) => setInput(prev => prev ? prev + ' ' + text : text)}
+                                            disabled={isLoading}
+                                            userId={userId}
+                                            sessionId={activeConversation?.backendSessionId || activeId || undefined}
+                                        />
                                     )}
                                 </form>
                                 <p className="text-center text-xs text-gray-400 mt-3">

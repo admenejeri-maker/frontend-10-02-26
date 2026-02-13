@@ -82,10 +82,7 @@ export function ThinkingStepsLoader({ userMessage, realThoughts, onComplete }: T
             {/* AI Response Container - Using stable grid class for consistent width */}
             <div className="ai-response-grid">
                 {/* Scoop Logo with pulse ring - fixed 32px width */}
-                <div
-                    className="relative w-8 h-8 rounded-xl border flex items-center justify-center flex-shrink-0 animate-pulse-ring"
-                    style={{ backgroundColor: 'white', borderColor: '#E5E7EB' }}
-                >
+                <div className="gemini-avatar-container relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
                     <ScoopLogo className="w-4 h-4" />
                 </div>
 

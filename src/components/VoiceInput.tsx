@@ -296,12 +296,11 @@ export function VoiceInput({ onTranscription, disabled, userId, sessionId }: Voi
                 onClick={handleClick}
                 disabled={disabled || isProcessing || !userId}
                 aria-label={isRecording ? 'შეჩერება' : 'ხმით შეყვანა'}
-                className="flex items-center justify-center p-2 rounded-lg transition-all duration-150"
+                className={`flex items-center justify-center p-2 rounded-full transition-all duration-150 ${isRecording ? '' : 'hover:bg-black/5 bg-transparent'}`}
                 style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: isRecording ? '#FEE2E2' : 'transparent',
-                    border: isRecording ? '1px solid #FECACA' : '1px solid transparent',
+                    width: '44px',
+                    height: '44px',
+                    ...(isRecording ? { backgroundColor: '#FEE2E2', border: '1px solid #FECACA' } : {}),
                     opacity: disabled || isProcessing || !userId ? 0.5 : 1,
                     cursor: disabled || isProcessing || !userId ? 'not-allowed' : 'pointer',
                 }}
@@ -313,7 +312,7 @@ export function VoiceInput({ onTranscription, disabled, userId, sessionId }: Voi
                 ) : (
                     <Mic
                         className="w-5 h-5"
-                        style={{ color: state === 'error' ? '#DC2626' : '#6B7280' }}
+                        style={{ color: state === 'error' ? '#DC2626' : '#0A7364' }}
                     />
                 )}
             </button>

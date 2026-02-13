@@ -4,7 +4,7 @@
 :root {
   --background: #ffffff;
   /* Sterile White - Main Background */
-  --foreground: #000000;
+  --foreground: #1f1f1f;
   /* Sharp Black - Text */
   --card: #ffffff;
   --card-foreground: #000000;
@@ -15,7 +15,7 @@
   --primary-foreground: #ffffff;
   --secondary: #f9fafb;
   --secondary-foreground: #000000;
-  --muted: #f3f4f6;
+  --muted: #f0f4f9;
   --muted-foreground: #6b7280;
   --accent: #0a7364;
   --accent-foreground: #ffffff;
@@ -26,8 +26,8 @@
   /* Neutral border */
   --input: #e5e7eb;
   --ring: #0a7364;
-  --radius: 0.5rem;
-  /* 8px base radius */
+  --radius: 1.25rem;
+  /* 20px base radius */
 
   /* Scoop Brand Colors */
   --pine-green: #0a7364;
@@ -804,8 +804,15 @@
 
 /* === STREAMING CURSOR ANIMATION === */
 @keyframes cursorBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 .streaming-cursor::after {
@@ -818,13 +825,14 @@
 
 /* === FADE-IN TEXT CHUNK ANIMATION === */
 @keyframes fadeInChunk {
-  from { 
-    opacity: 0; 
-    transform: translateY(4px); 
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -890,18 +898,18 @@
 
 /* === MESSAGE BUBBLES ENHANCEMENT === */
 .message-user {
-  background: var(--pine-green);
-  color: white;
-  border-radius: 20px 20px 4px 20px;
-  padding: 12px 18px;
+  background: #f0f4f9;
+  color: #1f1f1f;
+  border-radius: 22px;
+  padding: 14px 20px;
   animation: slideInRight 0.3s ease-out;
 }
 
 .message-ai {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px 20px 20px 4px;
-  padding: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 4px;
   animation: slideInLeft 0.3s ease-out;
 }
 
@@ -1140,8 +1148,15 @@
    ============================================ */
 
 @keyframes skeletonPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .sidebar-skeleton {
@@ -1165,4 +1180,45 @@
   border-radius: 16px;
   background: var(--muted);
   animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+/* === GEMINI FLOATING INPUT CONTAINER === */
+.gemini-input-container {
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.8) 30%, white 60%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding-top: 16px;
+}
+
+[data-theme="dark"] .gemini-input-container,
+.dark .gemini-input-container {
+  background: linear-gradient(to bottom, transparent, rgba(17, 17, 17, 0.8) 30%, #111111 60%);
+}
+
+/* === GEMINI AI AVATAR ANIMATION === */
+.gemini-avatar-container {
+  background: #f0f4f9;
+  position: relative;
+  z-index: 1;
+}
+
+.gemini-avatar-container::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+      #4285f4, #34a853, #fbbc04, #ea4335, #4285f4);
+  z-index: -1;
+  animation: geminiGradientSpin 3s linear infinite;
+}
+
+@keyframes geminiGradientSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -67,7 +67,7 @@ export function EmptyScreen({ setInput }: EmptyScreenProps) {
                             key={category.id}
                             onClick={() => setInput(category.message)}
                             data-testid={`category-card-${category.id}`}
-                            className="group flex items-start gap-4 p-5 rounded-xl border border-[#E5E7EB] bg-card hover:border-[#0A7364] hover:bg-[#0A7364]/5 hover:shadow-md transition-all duration-200 text-left cursor-pointer active:scale-95"
+                            className="group flex items-start gap-4 p-5 rounded-2xl bg-[#f0f4f9] hover:bg-[#e2e8f0] transition-all duration-200 text-left cursor-pointer active:scale-[0.98]"
                         >
                             <div
                                 className="p-2 rounded-xl transition-colors"

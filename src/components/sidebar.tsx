@@ -276,11 +276,11 @@ export function Sidebar() {
                                 key={conv.id}
                                 onClick={() => handleSelect(conv.id)}
                                 data-testid={`sidebar-conversation-${conv.id}`}
-                                className={`w-full min-w-0 text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 group relative overflow-hidden cursor-pointer ${isActive
-                                    ? 'bg-green-50 text-foreground font-medium shadow-sm'
-                                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-foreground'
+                                className={`w-full min-w-0 text-left px-3 py-2.5 rounded-full text-sm transition-all duration-200 flex items-center gap-3 group relative overflow-hidden cursor-pointer ${isActive
+                                    ? 'text-foreground font-medium'
+                                    : 'text-muted-foreground hover:bg-[#f0f4f9] hover:text-foreground'
                                     }`}
-                                style={isActive ? { borderLeftWidth: '3px', borderLeftColor: '#0A7364' } : {}}
+                                style={isActive ? { backgroundColor: 'rgba(10, 115, 100, 0.15)' } : {}}
                             >
                                 {/* Dynamic Theme Icon */}
                                 <IconComponent
