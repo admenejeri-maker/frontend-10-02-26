@@ -570,7 +570,7 @@ export default function Chat() {
 
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile header */}
-                <div className="lg:hidden flex items-center gap-3 p-4 border-b border-border">
+                <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 p-4 border-b border-border bg-background">
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -679,7 +679,7 @@ export default function Chat() {
                     /* ===== ACTIVE STATE: Messages + Bottom Input ===== */
                     <>
                         {/* Chat content - scrollable */}
-                        <div className="flex-1 chat-scroll-container bg-background pb-8">
+                        <div className="flex-1 min-h-0 chat-scroll-container bg-background pb-8">
                             {renderChatHistory()}
                         </div>
 
