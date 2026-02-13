@@ -671,7 +671,7 @@ export default function Chat() {
                             </div>
                         </div>
 
-                        <p className="text-center text-xs text-gray-400 mt-6 disclaimer-text">
+                        <p className="text-center text-xs text-gray-400 mt-3 disclaimer-text">
                             გაითვალისწინეთ, AI ასისტენტმა შეიძლება დაუშვას შეცდომა.
                         </p>
                     </div>
@@ -767,8 +767,8 @@ export default function Chat() {
                                         />
                                     )}
                                 </form>
-                                <p className="text-center text-xs text-gray-400 mt-3">
-                                    გაითვალისწინეთ, AI ასისტენტმა შეიძლება დაუშვას შეცდომა. ჯანმრთელობის საკითხებზე გაიარეთ კონსულტაცია სპეციალისტთან.
+                                <p className="text-center text-xs text-gray-400 mt-2 disclaimer-text">
+                                    გაითვალისწინეთ, AI ასისტენტმა შეიძლება დაუშვას შეცდომა.
                                 </p>
                             </div>
                         </div>
