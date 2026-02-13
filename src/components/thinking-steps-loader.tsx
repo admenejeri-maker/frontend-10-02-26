@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Package, Search, FileText, Calculator, Check } from 'lucide-react';
+import { Package, Search, FileText, Calculator } from 'lucide-react';
 import { ScoopLogo } from './scoop-logo';
 import type { LucideIcon } from 'lucide-react';
 
@@ -91,26 +91,24 @@ export function ThinkingStepsLoader({ userMessage, realThoughts, onComplete }: T
                     <div className="space-y-2">
                         {/* Render REAL thoughts if available */}
                         {hasRealThoughts ? (
-                            filteredThoughts.map((thought, index) => (
+                            /* Single-line mode: only show the LATEST thought */
+                            <div
+                                className="flex items-center gap-3 min-h-7"
+                                aria-label={`აზრი ${filteredThoughts.length}`}
+                            >
+                                {/* Pulsing active indicator */}
                                 <div
-                                    key={index}
-                                    className="flex items-center gap-3 min-h-7"
-                                    aria-label={`აზრი ${index + 1}`}
+                                    className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 animate-pulse"
+                                    style={{ backgroundColor: '#0A7364' }}
                                 >
-                                    {/* Completed indicator */}
-                                    <div
-                                        className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                                        style={{ backgroundColor: '#0A7364' }}
-                                    >
-                                        <Check className="w-2.5 h-2.5 text-white animate-check-pop" strokeWidth={3} />
-                                    </div>
-
-                                    {/* Thought text - extracted bold only */}
-                                    <span className="text-[12px] font-medium" style={{ color: '#111827' }}>
-                                        {extractBoldText(thought)}
-                                    </span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
                                 </div>
-                            ))
+
+                                {/* Latest thought text — updates in place */}
+                                <span className="text-[12px] font-medium transition-all duration-300" style={{ color: '#111827' }}>
+                                    {extractBoldText(filteredThoughts[filteredThoughts.length - 1])}...
+                                </span>
+                            </div>
                         ) : (
                             /* Minimal waiting animation until real thoughts arrive */
                             <div className="flex items-center gap-3 min-h-7">
