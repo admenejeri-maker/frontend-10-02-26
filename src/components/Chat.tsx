@@ -137,6 +137,7 @@ export default function Chat() {
 
     // Derived state
     const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
+    const activeMessagesCount = activeConversation?.messages?.length ?? -1;
 
     // ── Local UI state (component-level, not shared) ──
     const [input, setInput] = useState('');
@@ -146,6 +147,7 @@ export default function Chat() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const lastUserMessageRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const historyLoadAttempted = useRef<string | null>(null);
 
     // SSE Stream hook for message streaming
     const { streamMessage, abortStream } = useSSEStream();
@@ -170,6 +172,21 @@ export default function Chat() {
             loadSessions();
         }
     }, [consent, userId, loadSessions]);
+
+    // ── Auto-load chat history when activeId is set but messages are empty ──
+    // Handles page refresh: activeId rehydrated → loadSessions() gives messages: []
+    // → we fetch actual messages from API. useRef prevents infinite loops.
+    useEffect(() => {
+        if (
+            activeId &&
+            activeId !== historyLoadAttempted.current &&
+            !isLoadingHistory &&
+            activeMessagesCount === 0
+        ) {
+            historyLoadAttempted.current = activeId;
+            loadSessionHistory(activeId);
+        }
+    }, [activeId, activeMessagesCount, isLoadingHistory, loadSessionHistory]);
 
     // ── Show consent modal if consent is null (first visit) ──
     useEffect(() => {

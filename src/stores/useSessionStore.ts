@@ -191,6 +191,9 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                 initializeSession: () => {
                     if (typeof window === 'undefined') return;
 
+                    // Rehydrate persisted state (userId, consent, activeId) from localStorage
+                    useSessionStore.persist.rehydrate();
+
                     // Read consent from legacy key (default: save history)
                     let hasConsent = localStorage.getItem(LS_KEY_CONSENT);
                     if (!hasConsent) {
@@ -252,6 +255,18 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                                 })
                             );
                             set({ conversations: loadedConvs }, false, 'loadSessions');
+
+                            // Validate persisted activeId still exists in loaded sessions
+                            const { activeId } = get();
+                            if (activeId && !loadedConvs.find(c => c.id === activeId)) {
+                                set({ activeId: null }, false, 'clearStaleActiveId');
+                            }
+                        } else {
+                            // No sessions exist — clear any stale activeId
+                            const { activeId } = get();
+                            if (activeId) {
+                                set({ activeId: null }, false, 'clearStaleActiveId');
+                            }
                         }
                         set({ sessionsLoaded: true }, false, 'loadSessions/done');
                     } catch (error) {
@@ -339,10 +354,11 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             }),
             {
                 name: 'scoop-session',
-                // Only persist userId and consent — NOT conversations
+                // Persist userId, consent, and activeId — NOT conversations
                 partialize: (state) => ({
                     userId: state.userId,
                     consent: state.consent,
+                    activeId: state.activeId,
                 }),
                 skipHydration: true,
             }
