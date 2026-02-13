@@ -504,7 +504,7 @@ export default function Chat() {
     };
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden w-full max-w-[1184px]">
+        <div className="flex h-full bg-background overflow-hidden w-full max-w-[1184px]">
             <Sidebar />
 
             {/* Consent Modal */}
@@ -583,7 +583,7 @@ export default function Chat() {
 
                 {/* Desktop Header - Only show when there are messages */}
                 {activeConversation && activeConversation.messages.length > 0 && (
-                    <div className="hidden lg:flex px-6 py-3 items-center justify-between bg-white" style={{ borderBottom: '1px solid #E5E5E5' }}>
+                    <div className="hidden lg:flex sticky top-0 z-30 px-6 py-3 items-center justify-between bg-white" style={{ borderBottom: '1px solid #E5E5E5' }}>
                         <div className="flex items-center gap-2.5">
                             <div className="flex items-center justify-center rounded-lg" style={{ width: '32px', height: '32px', backgroundColor: '#0A7364' }}>
                                 <ScoopLogo className="w-5 h-5 text-white" />
