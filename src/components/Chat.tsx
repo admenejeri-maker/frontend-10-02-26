@@ -679,13 +679,13 @@ export default function Chat() {
                     /* ===== ACTIVE STATE: Messages + Bottom Input ===== */
                     <>
                         {/* Chat content - scrollable */}
-                        <div className="flex-1 min-h-0 chat-scroll-container bg-background pb-8">
+                        <div className="flex-1 min-h-0 chat-scroll-container bg-background">
                             {renderChatHistory()}
                         </div>
 
                         {/* Input area - fixed at bottom */}
                         <div className="gemini-input-container">
-                            <div className="max-w-3xl mx-auto px-4 py-3">
+                            <div className="max-w-3xl mx-auto px-4 pt-1 pb-3">
                                 <form onSubmit={handleSubmit} className="relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8]">
                                     <textarea
                                         ref={textareaRef}
@@ -767,9 +767,7 @@ export default function Chat() {
                                         />
                                     )}
                                 </form>
-                                <p className="text-center text-xs text-gray-400 mt-2 disclaimer-text">
-                                    გაითვალისწინეთ, AI ასისტენტმა შეიძლება დაუშვას შეცდომა.
-                                </p>
+
                             </div>
                         </div>
                     </>

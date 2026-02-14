@@ -456,7 +456,7 @@
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding-bottom: 0.25rem;
 }
 
 /* Stable grid layout for AI response containers - use fixed pixel width for icon column */
@@ -1181,15 +1181,16 @@
 
 /* === GEMINI FLOATING INPUT CONTAINER === */
 .gemini-input-container {
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.8) 30%, white 60%);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), white 40%);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  padding-top: 16px;
+  padding-top: 0;
+  padding-bottom: 8px;
 }
 
 [data-theme="dark"] .gemini-input-container,
 .dark .gemini-input-container {
-  background: linear-gradient(to bottom, transparent, rgba(17, 17, 17, 0.8) 30%, #111111 60%);
+  background: linear-gradient(to bottom, rgba(17, 17, 17, 0.95), #111111 40%);
 }
 
 /* Mobile: opaque input container to prevent content bleed-through */
@@ -1199,7 +1200,7 @@
     bottom: 0;
     background: #fff;
     z-index: 30;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
   }
 
   [data-theme="dark"] .gemini-input-container,
