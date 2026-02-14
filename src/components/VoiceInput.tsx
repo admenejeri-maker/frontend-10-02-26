@@ -12,6 +12,7 @@ const SILENCE_DURATION_MS = 3500;     // 3.5 seconds of continuous silence to au
 const SILENCE_CHECK_INTERVAL = 200;   // Poll volume 5x/second
 const MIN_RECORDING_MS = 2000;        // Don't auto-stop in first 2 seconds
 const MAX_RECORDING_SECONDS = 60;     // Aligned with backend config.audio_max_duration_seconds
+const MAX_AUDIO_SIZE_MB = 7;            // Aligned with backend INLINE_SIZE_THRESHOLD
 
 type VoiceState = 'idle' | 'requesting' | 'recording' | 'processing' | 'error';
 
@@ -208,9 +209,9 @@ export function VoiceInput({ onTranscription, disabled, userId, sessionId }: Voi
             return;
         }
 
-        // Validate size (max 10MB)
-        if (blob.size > 10 * 1024 * 1024) {
-            setError('ფაილი ძალიან დიდია');
+        // Validate size
+        if (blob.size > MAX_AUDIO_SIZE_MB * 1024 * 1024) {
+            setError(`ფაილი ძალიან დიდია (მაქს. ${MAX_AUDIO_SIZE_MB}MB)`);
             setState('idle');
             setDuration(0);
             return;
