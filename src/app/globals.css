@@ -449,12 +449,12 @@
 /* Ensure chat content wrapper maintains stable width */
 .chat-content-wrapper {
   width: 100%;
-  max-width: 56rem;
-  /* 896px = max-w-4xl */
+  max-width: 48rem;
+  /* 768px = max-w-3xl — matches input bar */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   padding-top: 1.5rem;
   padding-bottom: 0.25rem;
 }
