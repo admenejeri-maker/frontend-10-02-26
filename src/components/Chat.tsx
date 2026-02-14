@@ -569,9 +569,9 @@ export default function Chat() {
                 </div>
             )}
 
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0">
                 {/* Mobile header */}
-                <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 p-4 bg-background">
+                <div className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center gap-3 p-4 bg-background">
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors"
