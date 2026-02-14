@@ -120,7 +120,9 @@ export async function enrollApiKey(
  * - X-CSRF-Token header (on POST/PUT/DELETE/PATCH)
  * - credentials: 'include' (so csrf_token cookie is sent)
  *
- * On 403 with CSRF error code, auto-retries once after refreshing the token.
+ * Auto-recovery:
+ * - On 401 with stale API key: clears key, re-enrolls, retries once
+ * - On 403 with CSRF error: refreshes token, retries once
  */
 export async function apiFetch(
     url: string,
@@ -147,6 +149,56 @@ export async function apiFetch(
         headers,
         credentials: 'include', // Send csrf_token cookie
     });
+
+    // P0 Fix: Auto-recovery on 401 with stale API key
+    // If we sent a key and got 401, the key was deleted from MongoDB (stale key cleanup)
+    // Clear the stale key, re-enroll, and retry once
+    if (response.status === 401 && apiKey) {
+        console.warn('[Scoop] 401 detected — stale API key, attempting re-enrollment...');
+        clearApiKey();
+
+        // Get userId from localStorage to re-enroll
+        const userId = typeof window !== 'undefined'
+            ? localStorage.getItem('scoop_user_id')
+            : null;
+
+        if (userId) {
+            // Extract backend URL from the request URL
+            const urlObj = new URL(url);
+            const backendUrl = `${urlObj.protocol}//${urlObj.host}`;
+
+            // Re-enroll (now proceeds since we cleared the key)
+            await enrollApiKey(userId, backendUrl);
+
+            const newKey = getApiKey();
+            if (newKey) {
+                console.log('[Scoop] Re-enrollment successful, retrying request...');
+
+                // Build new headers with fresh key
+                const retryHeaders = new Headers(options.headers);
+                retryHeaders.set('X-API-Key', newKey);
+
+                // Re-inject CSRF token if needed
+                if (CSRF_PROTECTED_METHODS.has(method)) {
+                    const csrfToken = getCsrfToken();
+                    if (csrfToken) {
+                        retryHeaders.set('X-CSRF-Token', csrfToken);
+                    }
+                }
+
+                // Retry the request once with new key
+                return fetch(url, {
+                    ...options,
+                    headers: retryHeaders,
+                    credentials: 'include',
+                });
+            } else {
+                console.warn('[Scoop] Re-enrollment failed, returning original 401');
+            }
+        } else {
+            console.warn('[Scoop] No userId found, cannot re-enroll');
+        }
+    }
 
     // P2.6: Auto-refresh CSRF token on 403 CSRF error (one retry)
     if (response.status === 403 && CSRF_PROTECTED_METHODS.has(method)) {
