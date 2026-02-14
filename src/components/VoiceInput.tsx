@@ -11,6 +11,7 @@ const SILENCE_THRESHOLD = 0.03;       // 3% normalized RMS — lower = less aggr
 const SILENCE_DURATION_MS = 3500;     // 3.5 seconds of continuous silence to auto-stop
 const SILENCE_CHECK_INTERVAL = 200;   // Poll volume 5x/second
 const MIN_RECORDING_MS = 2000;        // Don't auto-stop in first 2 seconds
+const MAX_RECORDING_SECONDS = 60;     // Aligned with backend config.audio_max_duration_seconds
 
 type VoiceState = 'idle' | 'requesting' | 'recording' | 'processing' | 'error';
 
@@ -103,10 +104,10 @@ export function VoiceInput({ onTranscription, disabled, userId, sessionId }: Voi
                 setDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
             }, 100);
 
-            // M4: Auto-stop after max duration (120s)
+            // M4: Auto-stop after max duration
             autoStopRef.current = setTimeout(() => {
                 stopRecording();
-            }, 120 * 1000);
+            }, MAX_RECORDING_SECONDS * 1000);
 
             // Silence detection: setup Web Audio analyser
             const audioCtx = new AudioContext();
