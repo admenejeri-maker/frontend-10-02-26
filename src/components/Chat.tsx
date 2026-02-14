@@ -570,7 +570,7 @@ export default function Chat() {
 
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile header */}
-                <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 p-4 border-b border-border bg-background">
+                <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 p-4 bg-background">
                     <button
                         onClick={() => setSidebarOpen(true)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -583,19 +583,14 @@ export default function Chat() {
 
                 {/* Desktop Header - Only show when there are messages */}
                 {activeConversation && activeConversation.messages.length > 0 && (
-                    <div className="hidden lg:flex sticky top-0 z-30 px-6 py-3 items-center justify-between bg-white" style={{ borderBottom: '1px solid #E5E5E5' }}>
+                    <div className="hidden lg:flex sticky top-0 z-30 px-6 py-3 items-center justify-between bg-white">
                         <div className="flex items-center gap-2.5">
                             <div className="flex items-center justify-center rounded-lg" style={{ width: '32px', height: '32px', backgroundColor: '#0A7364' }}>
                                 <ScoopLogo className="w-5 h-5 text-white" />
                             </div>
                             <span className="font-semibold text-base" style={{ color: '#111827' }}>Scoop AI</span>
                         </div>
-                        <button
-                            className="p-2 rounded-lg transition-colors hover:bg-[#F3F4F6] group"
-                            style={{ width: '40px', height: '40px' }}
-                        >
-                            <Settings className="w-5 h-5 group-hover:text-[#374151]" style={{ color: '#6B7280' }} strokeWidth={1.5} data-testid="chat-settings-button" />
-                        </button>
+
                     </div>
                 )}
 

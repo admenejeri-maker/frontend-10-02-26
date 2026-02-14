@@ -323,7 +323,7 @@ export function Sidebar() {
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
             >
-                <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden" data-testid="sidebar-container">
+                <div className="h-full flex flex-col bg-sidebar overflow-hidden" data-testid="sidebar-container">
                     {/* New conversation button - Gemini Style */}
                     <div className="p-4">
                         <button
@@ -363,11 +363,11 @@ export function Sidebar() {
                     </div>
 
                     {/* Settings footer with popover */}
-                    <div className="p-4 border-t border-sidebar-border relative">
+                    <div className="p-4 relative">
                         <button
                             ref={settingsButtonRef}
                             onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full px-3 py-2 rounded-md hover:bg-sidebar-accent"
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full px-3 py-2 rounded-md hover:bg-sidebar-accent cursor-pointer"
                         >
                             <Settings className="w-4 h-4" strokeWidth={1.5} />
                             <span>პარამეტრები</span>
