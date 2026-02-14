@@ -380,7 +380,7 @@ export function Sidebar() {
                                 className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
                             >
                                 <button
-                                    className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full px-4 py-2.5"
+                                    className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full px-4 py-2.5 cursor-pointer"
                                     onClick={() => {
                                         setShowSettingsMenu(false);
                                         // Placeholder for About Assistant action
@@ -395,7 +395,7 @@ export function Sidebar() {
                                         setShowSettingsMenu(false);
                                         openDeleteConfirm();
                                     }}
-                                    className="flex items-center gap-2 text-sm text-red-500 hover:bg-red-50 transition-colors w-full px-4 py-2.5"
+                                    className="flex items-center gap-2 text-sm text-red-500 hover:bg-red-50 transition-colors w-full px-4 py-2.5 cursor-pointer"
                                 >
                                     <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                                     <span>წაშალე მონაცემები</span>
