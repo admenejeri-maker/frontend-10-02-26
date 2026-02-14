@@ -117,6 +117,7 @@ export default function Chat() {
     const setConversations = useSessionStore((s) => s.setConversations);
     const initializeSession = useSessionStore((s) => s.initializeSession);
     const loadSessions = useSessionStore((s) => s.loadSessions);
+    const isSessionReady = useSessionStore((s) => s.isSessionReady);
     const loadSessionHistory = useSessionStore((s) => s.loadSessionHistory);
 
     // ── Zustand: UI Store ──
@@ -166,12 +167,12 @@ export default function Chat() {
         initializeSession();
     }, [initializeSession]);
 
-    // ── Load sessions when userId + consent are ready ──
+    // ── Load sessions when userId + consent + session initialization are ready ──
     useEffect(() => {
-        if (consent === 'true' && userId) {
+        if (consent === 'true' && userId && isSessionReady) {
             loadSessions();
         }
-    }, [consent, userId, loadSessions]);
+    }, [consent, userId, isSessionReady, loadSessions]);
 
     // ── Auto-load chat history when activeId is set but messages are empty ──
     // Handles page refresh: activeId rehydrated → loadSessions() gives messages: []

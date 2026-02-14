@@ -96,6 +96,7 @@ export async function enrollApiKey(
         const res = await fetch(`${backendUrl}/api/v1/auth/key`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',  // Ensure cookies sent cross-origin
             body: JSON.stringify({ user_id: userId }),
         });
 
@@ -197,6 +198,48 @@ export async function apiFetch(
             }
         } else {
             console.warn('[Scoop] No userId found, cannot re-enroll');
+        }
+    }
+
+    // Incognito race condition fix: 401 with NO API key
+    // Attempt enrollment and retry once before giving up
+    if (response.status === 401 && !apiKey) {
+        console.warn('[Scoop] 401 with no API key — attempting enrollment...');
+
+        const userId = typeof window !== 'undefined'
+            ? localStorage.getItem('scoop_user_id')
+            : null;
+
+        if (userId) {
+            const urlObj = new URL(url);
+            const backendUrl = `${urlObj.protocol}//${urlObj.host}`;
+
+            await enrollApiKey(userId, backendUrl);
+
+            const newKey = getApiKey();
+            if (newKey) {
+                console.log('[Scoop] Enrollment recovered, retrying request...');
+
+                const retryHeaders = new Headers(options.headers);
+                retryHeaders.set('X-API-Key', newKey);
+
+                if (CSRF_PROTECTED_METHODS.has(method)) {
+                    const csrfToken = getCsrfToken();
+                    if (csrfToken) {
+                        retryHeaders.set('X-CSRF-Token', csrfToken);
+                    }
+                }
+
+                return fetch(url, {
+                    ...options,
+                    headers: retryHeaders,
+                    credentials: 'include',
+                });
+            } else {
+                console.warn('[Scoop] Enrollment failed, returning original 401');
+            }
+        } else {
+            console.warn('[Scoop] No userId found, cannot enroll');
         }
     }
 

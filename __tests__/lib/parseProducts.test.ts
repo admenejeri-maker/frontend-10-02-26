@@ -154,4 +154,23 @@ This is a summary section, not a product.
         expect(result.products).toHaveLength(1)
         expect(result.products[0].name).toBe('Test Product')
     })
+
+    it('does not parse buy links wrapped in bold markdown', () => {
+        const markdown = `
+**რეკომენდებული**
+**Bold Link Product**
+*Brand Y*
+**70 ₾** · 25 პორცია · 2.80 ₾/პორცია
+Product with bold buy link
+**[ყიდვა →](https://example.com/bold-link)**
+`.trim()
+
+        const result = parseProductsFromMarkdown(markdown)
+
+        // Product may be parsed but buyLink should NOT be extracted
+        // because the regex expects [ყიდვა →](url), not **[ყიდვა →](url)**
+        if (result.products.length > 0) {
+            expect(result.products[0].buyLink).toBeUndefined()
+        }
+    })
 })

@@ -142,5 +142,22 @@ describe('useSessionStore persist', () => {
         );
         expect(useSessionStore.getState().activeId).toBe('conv_merge_test');
     });
+
+    // ─── T5: isSessionReady is NOT persisted ─────────────────────────────────
+
+    test('isSessionReady is NOT persisted to localStorage', () => {
+        useSessionStore.setState({ isSessionReady: true });
+        const stored = JSON.parse(localStorage.getItem('scoop-session') || '{}');
+        expect(stored.state?.isSessionReady).toBeUndefined();
+    });
+
+    // ─── T6: set() merge preserves isSessionReady ────────────────────────────
+
+    test('set() merge preserves isSessionReady across state updates', () => {
+        useSessionStore.setState({ isSessionReady: true });
+        // Simulate a state update that shouldn't clobber isSessionReady
+        useSessionStore.setState({ userId: 'widget_updated', consent: 'true' });
+        expect(useSessionStore.getState().isSessionReady).toBe(true);
+    });
 });
 

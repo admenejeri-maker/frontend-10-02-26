@@ -28,6 +28,9 @@ export interface SessionState {
     userId: string;
     consent: string | null;
 
+    // Initialization gate (Incognito race condition fix)
+    isSessionReady: boolean;
+
     // Loading states
     sessionsLoaded: boolean;
     isLoadingHistory: boolean;
@@ -57,7 +60,7 @@ export interface SessionActions {
     handleRejectConsent: () => void;
 
     // Async operations (migrated from useChatSession)
-    initializeSession: () => void;
+    initializeSession: () => Promise<void>;
     loadSessions: () => Promise<void>;
     loadSessionHistory: (sessionId: string) => Promise<void>;
     handleDeleteData: () => Promise<void>;
@@ -83,6 +86,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                 activeId: null,
                 userId: '',
                 consent: 'true',
+                isSessionReady: false,  // Gate for loadSessions (Incognito race condition fix)
                 sessionsLoaded: false,
                 isLoadingHistory: false,
 
@@ -188,7 +192,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                 },
 
                 // ── Async: Session Initialization ─────────────────────────────────
-                initializeSession: () => {
+                initializeSession: async () => {
                     if (typeof window === 'undefined') return;
 
                     // Rehydrate persisted state (userId, consent, activeId) from localStorage
@@ -217,8 +221,15 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                         'initializeSession'
                     );
 
-                    // Fire-and-forget API key enrollment
-                    enrollApiKey(currentUserId, BACKEND_URL);
+                    // Await API key enrollment — blocks isSessionReady until complete
+                    try {
+                        await enrollApiKey(currentUserId, BACKEND_URL);
+                    } catch (err) {
+                        console.warn('[Scoop] enrollApiKey failed during init:', err);
+                    } finally {
+                        // ALWAYS signal ready — even if enrollment fails (graceful degradation)
+                        set({ isSessionReady: true }, false, 'initializeSession/ready');
+                    }
                 },
 
                 // ── Async: Load Session List ──────────────────────────────────────
@@ -232,7 +243,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
                         }
                         return;
                     }
-                    if (!userId || sessionsLoaded) return;
+                    if (!userId || sessionsLoaded || !get().isSessionReady) return;
 
                     try {
                         const res = await apiFetch(`${BACKEND_URL}/api/v1/sessions/${userId}`);
