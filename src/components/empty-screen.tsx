@@ -2,6 +2,7 @@
 
 import { Dumbbell, Zap, Flame, Heart } from 'lucide-react';
 import { ScoopLogo } from './scoop-logo';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 interface EmptyScreenProps {
     setInput: (text: string) => void;
@@ -43,6 +44,7 @@ const categories = [
 ];
 
 export function EmptyScreen({ setInput }: EmptyScreenProps) {
+    const { isEnabled } = useFeatureFlags();
     return (
         // Uses same ai-response-grid structure as ThinkingStepsLoader/ChatResponse
         <div className="ai-response-grid py-6">
@@ -67,7 +69,7 @@ export function EmptyScreen({ setInput }: EmptyScreenProps) {
                             key={category.id}
                             onClick={() => setInput(category.message)}
                             data-testid={`category-card-${category.id}`}
-                            className="group flex items-start gap-4 p-5 rounded-2xl bg-[#f0f4f9] hover:bg-[#e2e8f0] transition-all duration-200 text-left cursor-pointer active:scale-[0.98]"
+                            className={`group flex items-start gap-4 p-5 rounded-2xl bg-[#f0f4f9] hover:bg-[#e2e8f0] transition-all duration-200 text-left cursor-pointer active:scale-[0.98] ${isEnabled('ui_example_hover') ? 'hover-lift' : ''}`}
                         >
                             <div
                                 className="p-2 rounded-xl transition-colors"

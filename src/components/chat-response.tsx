@@ -4,8 +4,9 @@ import type React from "react"
 import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown'
 import { ScoopLogo } from "./scoop-logo"
-import { RefreshCw, Lightbulb } from "lucide-react"
+import { CornerDownRight, Lightbulb } from "lucide-react"
 import { parseProductsFromMarkdown } from "@/lib/parseProducts"
+import { useFeatureFlags } from "@/hooks/useFeatureFlags"
 
 // Dynamic import: ProductCard only needed when products exist in response
 const ProductCard = dynamic(
@@ -42,6 +43,8 @@ export function ChatResponse({
     onQuickReplyClick,
     isStreaming = false,
 }: ChatResponseProps) {
+    // Feature flags
+    const { isEnabled } = useFeatureFlags();
     // Parse products from markdown if content exists
     const parsed = assistantContent
         ? parseProductsFromMarkdown(assistantContent)
@@ -71,7 +74,7 @@ export function ChatResponse({
                 </div>
 
                 {/* Content - uses stable content class + streaming cursor */}
-                <div className={`ai-response-content space-y-4 ${isStreaming ? 'streaming-cursor' : ''}`}>
+                <div className={`ai-response-content space-y-4 ${isStreaming && isEnabled('ui_streaming_cursor') ? 'streaming-cursor' : ''}`}>
                     {assistantContent ? (
                         hasProducts ? (
                             // Render with ProductCards
@@ -148,14 +151,14 @@ export function ChatResponse({
 
             {/* Quick reply buttons - aligned with content (offset by icon) */}
             {quickReplies && quickReplies.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4" style={{ marginLeft: 'calc(32px + 12px)' }}>
+                <div className="flex flex-col pt-2" style={{ marginLeft: 'calc(32px + 12px)' }}>
                     {quickReplies.map((reply) => (
                         <button
                             key={reply.id}
                             onClick={() => onQuickReplyClick?.(reply.id, reply.text)}
                             className="quick-reply-btn group flex items-center gap-2"
                         >
-                            {reply.icon || <RefreshCw className="w-4 h-4" strokeWidth={1.5} />}
+                            <CornerDownRight className="w-4 h-4" strokeWidth={1.5} />
                             <span>{reply.text}</span>
                         </button>
                     ))}

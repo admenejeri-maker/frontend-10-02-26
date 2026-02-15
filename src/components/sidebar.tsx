@@ -29,6 +29,7 @@ import { LucideIcon } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useSessionStore } from '../stores/useSessionStore';
 import { useUIStore } from '../stores/useUIStore';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 // 1. თემატური აიკონები (პრიორიტეტის მიხედვით)
 const THEME_ICONS: Record<string, LucideIcon> = {
@@ -204,6 +205,9 @@ export function Sidebar() {
     const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
     const openDeleteConfirm = useUIStore((s) => s.openDeleteConfirm);
 
+    // ── Feature Flags ──
+    const { isEnabled } = useFeatureFlags();
+
     // Settings popover state
     const [showSettingsMenu, setShowSettingsMenu] = useState(false);
     const settingsMenuRef = useRef<HTMLDivElement>(null);
@@ -312,7 +316,7 @@ export function Sidebar() {
             {/* Mobile backdrop */}
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    className={`fixed inset-0 z-40 lg:hidden ${isEnabled('ui_glassmorphism') ? 'bg-black/30 backdrop-blur-sm' : 'bg-black/50'}`}
                     onClick={closeSidebar}
                 />
             )}
@@ -323,7 +327,7 @@ export function Sidebar() {
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}
             >
-                <div className="h-full flex flex-col bg-sidebar overflow-hidden" data-testid="sidebar-container">
+                <div className={`h-full flex flex-col bg-sidebar overflow-hidden ${isEnabled('ui_glassmorphism') ? 'glass-card' : ''}`} data-testid="sidebar-container">
                     {/* New conversation button - Gemini Style */}
                     <div className="p-4">
                         <button

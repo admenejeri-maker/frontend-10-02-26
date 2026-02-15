@@ -29,6 +29,7 @@ import {
 import type { Message, Conversation, QuickReply } from '@/types/api';
 import { useSessionStore } from '../stores/useSessionStore';
 import { useUIStore } from '../stores/useUIStore';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 // Backend API URL - Production Cloud Run
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
@@ -130,6 +131,9 @@ export default function Chat() {
     const closeDeleteConfirm = useUIStore((s) => s.closeDeleteConfirm);
     const isDeleting = useUIStore((s) => s.isDeleting);
     const setIsDeleting = useUIStore((s) => s.setIsDeleting);
+
+    // ── Feature Flags ──
+    const { isEnabled } = useFeatureFlags();
 
     // Consent handlers from session store (write to localStorage + Zustand)
     const handleAcceptConsent = useSessionStore((s) => s.handleAcceptConsent);
@@ -608,7 +612,7 @@ export default function Chat() {
 
                         {/* Centered Input */}
                         <div className="gemini-centered-input">
-                            <form onSubmit={handleSubmit} className="relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8]">
+                            <form onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8] input-3d-shadow ${isEnabled('ui_glassmorphism') ? 'glass-input' : ''}`}>
                                 <textarea
                                     ref={textareaRef}
                                     value={input}
@@ -682,7 +686,7 @@ export default function Chat() {
                         {/* Input area - fixed at bottom */}
                         <div className="gemini-input-container">
                             <div className="max-w-3xl mx-auto px-4 pt-1 pb-3">
-                                <form onSubmit={handleSubmit} className="relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8]">
+                                <form onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8] input-3d-shadow ${isEnabled('ui_glassmorphism') ? 'glass-input' : ''}`}>
                                     <textarea
                                         ref={textareaRef}
                                         value={input}

@@ -393,34 +393,38 @@
   margin-top: 16px;
 }
 
-/* Quick Reply Buttons - Matching .quick-pill style */
+/* Quick Reply Buttons - Perplexity vertical list style */
 .quick-reply-btn {
-  padding: 0.625rem 1rem;
-  border-radius: 9999px;
-  border: 1px solid #E5E7EB;
-  background: white;
-  color: #374151;
-  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 4px;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  background: transparent;
+  color: #1f2937;
+  font-size: 0.9375rem;
   font-family: 'Noto Sans Georgian', sans-serif;
   cursor: pointer;
-  transition: all 150ms ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
+  transition: background 0.15s ease;
+  text-align: left;
+  border-radius: 0;
 }
 
-/* Hide icons in quick reply buttons */
+/* Show ↳ icon in muted color */
 .quick-reply-btn svg {
-  display: none;
+  display: block;
+  flex-shrink: 0;
+  color: #9ca3af;
 }
 
 .quick-reply-btn:hover {
-  background: #F9FAFB;
-  border-color: #D1D5DB;
+  background: #f9fafb;
 }
 
 .quick-reply-btn:active {
-  background: #F3F4F6;
+  background: #f3f4f6;
 }
 
 
@@ -641,6 +645,23 @@
 
 .animate-glow-pulse {
   animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* === 3D INPUT SHADOW === */
+.input-3d-shadow {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.input-3d-shadow:focus-within {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    0 16px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 /* === HOVER EFFECTS === */

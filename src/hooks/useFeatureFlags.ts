@@ -19,6 +19,13 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:808
 
 // Default flags — used as fallback if API is unreachable
 const DEFAULT_FLAGS: Record<string, boolean> = {
+    // ── UI design toggles ──────────────────────────────────────────────────
+    ui_glassmorphism: true,      // Glass blur on sidebar, input, backdrop
+    ui_streaming_cursor: true,   // ▌ blinking cursor during AI streaming
+    ui_thinking_shimmer: true,   // Shimmer progress bar on thinking loader
+    ui_example_hover: true,      // Hover-lift effect on ExampleCard grid
+
+    // ── Backend feature toggles ────────────────────────────────────────────
     otel_tracing: false,
     safety_filters: true,
     context_caching: true,

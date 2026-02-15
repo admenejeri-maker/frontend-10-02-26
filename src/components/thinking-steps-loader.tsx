@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Package, Search, FileText, Calculator } from 'lucide-react';
 import { ScoopLogo } from './scoop-logo';
 import type { LucideIcon } from 'lucide-react';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 
 interface ThinkingStepsLoaderProps {
     userMessage: string;
@@ -37,6 +38,7 @@ const extractBoldText = (text: string | undefined | null): string => {
 export function ThinkingStepsLoader({ userMessage, realThoughts, onComplete }: ThinkingStepsLoaderProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+    const { isEnabled } = useFeatureFlags();
 
     // Use real thoughts if available, otherwise use fake steps
     // Filter out undefined/null/empty values
@@ -147,7 +149,7 @@ export function ThinkingStepsLoader({ userMessage, realThoughts, onComplete }: T
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="mt-3 pt-3 border-t" style={{ borderColor: '#E5E7EB' }}>
+                    <div className={`mt-3 pt-3 border-t ${isEnabled('ui_thinking_shimmer') ? 'thinking-progress-bar' : ''}`} style={{ borderColor: '#E5E7EB' }}>
                         <div
                             className="h-1 rounded-full overflow-hidden"
                             style={{ backgroundColor: '#F3F4F6' }}
