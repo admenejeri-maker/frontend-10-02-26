@@ -333,7 +333,7 @@ export function Sidebar() {
                             onClick={handleNewChat}
                             aria-label="ახალი საუბრის დაწყება"
                             tabIndex={0}
-                            className="flex items-center gap-3 py-3 px-4 rounded-2xl text-gray-700 hover:bg-gray-100 transition-all duration-150 ease-in-out active:scale-[0.98] cursor-pointer"
+                            className="flex items-center gap-3 py-3 px-4 rounded-2xl bg-[#E8F4F2] text-[#0a7364] hover:bg-[#d0ebe6] transition-all duration-150 ease-in-out active:scale-[0.98] cursor-pointer"
                             data-testid="sidebar-new-chat"
                         >
                             <PenLine className="w-5 h-5" strokeWidth={1.5} />
