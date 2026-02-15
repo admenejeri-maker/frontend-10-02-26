@@ -279,7 +279,7 @@ export function Sidebar() {
                                 key={conv.id}
                                 onClick={() => handleSelect(conv.id)}
                                 data-testid={`sidebar-conversation-${conv.id}`}
-                                className={`w-full min-w-0 text-left px-3 py-2.5 rounded-full text-sm transition-all duration-200 flex items-center gap-3 group relative overflow-hidden cursor-pointer ${isActive
+                                className={`w-full min-w-0 text-left px-3 py-2.5 rounded-2xl text-sm transition-all duration-200 flex items-center gap-3 group relative overflow-hidden cursor-pointer ${isActive
                                     ? 'text-foreground font-medium'
                                     : 'text-muted-foreground hover:bg-[#f0f4f9] hover:text-foreground'
                                     }`}
@@ -333,7 +333,7 @@ export function Sidebar() {
                             onClick={handleNewChat}
                             aria-label="ახალი საუბრის დაწყება"
                             tabIndex={0}
-                            className="flex items-center gap-3 py-3 px-4 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-150 ease-in-out active:scale-[0.98] cursor-pointer"
+                            className="flex items-center gap-3 py-3 px-4 rounded-2xl text-gray-700 hover:bg-gray-100 transition-all duration-150 ease-in-out active:scale-[0.98] cursor-pointer"
                             data-testid="sidebar-new-chat"
                         >
                             <PenLine className="w-5 h-5" strokeWidth={1.5} />
@@ -370,7 +370,7 @@ export function Sidebar() {
                         <button
                             ref={settingsButtonRef}
                             onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full px-3 py-2 rounded-md hover:bg-sidebar-accent cursor-pointer"
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors w-full px-3 py-2 rounded-2xl hover:bg-sidebar-accent cursor-pointer"
                         >
                             <Settings className="w-4 h-4" strokeWidth={1.5} />
                             <span>პარამეტრები</span>
