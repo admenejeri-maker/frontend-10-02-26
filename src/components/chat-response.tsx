@@ -112,7 +112,7 @@ export function ChatResponse({
 
                                 {/* Practical Tip - Amber style */}
                                 {parsed.tip && (
-                                    <div className="mt-4 p-4 rounded-xl border" style={{ backgroundColor: 'var(--tip-bg)', borderColor: 'var(--tip-border)' }}>
+                                    <div className="mt-4 p-4 rounded-2xl border" style={{ backgroundColor: 'var(--tip-bg)', borderColor: 'var(--tip-border)' }}>
                                         <div className="flex items-start gap-3">
                                             <Lightbulb className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--tip-icon)' }} strokeWidth={2} />
                                             <div>
@@ -131,7 +131,7 @@ export function ChatResponse({
                                 </div>
                                 {/* Practical Tip - Amber style */}
                                 {parsed.tip && (
-                                    <div className="mt-4 p-4 rounded-xl border" style={{ backgroundColor: 'var(--tip-bg)', borderColor: 'var(--tip-border)' }}>
+                                    <div className="mt-4 p-4 rounded-2xl border" style={{ backgroundColor: 'var(--tip-bg)', borderColor: 'var(--tip-border)' }}>
                                         <div className="flex items-start gap-3">
                                             <Lightbulb className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--tip-icon)' }} strokeWidth={2} />
                                             <div>

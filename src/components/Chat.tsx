@@ -612,7 +612,7 @@ export default function Chat() {
 
                         {/* Centered Input */}
                         <div className="gemini-centered-input">
-                            <form onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8] input-3d-shadow ${isEnabled('ui_glassmorphism') ? 'glass-input' : ''}`}>
+                            <form onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 pl-3 rounded-2xl bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8] input-3d-shadow ${isEnabled('ui_glassmorphism') ? 'glass-input' : ''}`}>
                                 <textarea
                                     ref={textareaRef}
                                     value={input}
@@ -686,7 +686,7 @@ export default function Chat() {
                         {/* Input area - fixed at bottom */}
                         <div className="gemini-input-container">
                             <div className="max-w-3xl mx-auto px-4 pt-1 pb-3">
-                                <form onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 pl-3 rounded-[28px] bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8] input-3d-shadow ${isEnabled('ui_glassmorphism') ? 'glass-input' : ''}`}>
+                                <form onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 pl-3 rounded-2xl bg-[#f0f4f9] focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-100/50 transition-all duration-300 ease-in-out border border-[#dfe3e8] input-3d-shadow ${isEnabled('ui_glassmorphism') ? 'glass-input' : ''}`}>
                                     <textarea
                                         ref={textareaRef}
                                         value={input}
